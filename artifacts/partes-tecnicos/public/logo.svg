@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="SCANIA">
+  <rect width="128" height="128" rx="24" fill="#334155"/>
+  <path d="M28 44h72c8 0 14 6 14 14v18c0 8-6 14-14 14H28c-8 0-14-6-14-14V58c0-8 6-14 14-14Z" fill="#ffb800"/>
+  <path d="M38 36h52l10 16H28l10-16Z" fill="#e5eef7"/>
+  <circle cx="42" cy="92" r="10" fill="#0f172a"/>
+  <circle cx="86" cy="92" r="10" fill="#0f172a"/>
+  <path d="M35 64h58" stroke="#0f172a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M49 75h30" stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
+</svg>

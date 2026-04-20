@@ -22,6 +22,8 @@ import type {
   ServiceReport,
   ServiceReportsSummary,
   UpdateServiceReportRequest,
+  UpdateUserProfileRequest,
+  UserProfile,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -110,7 +112,169 @@ export function useHealthCheck<
 }
 
 /**
- * @summary List service reports
+ * @summary Get current user profile
+ */
+export const getGetCurrentProfileUrl = () => {
+  return `/api/profile`;
+};
+
+export const getCurrentProfile = async (
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getGetCurrentProfileUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCurrentProfileQueryKey = () => {
+  return [`/api/profile`] as const;
+};
+
+export const getGetCurrentProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCurrentProfile>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentProfile>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCurrentProfileQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCurrentProfile>>
+  > = ({ signal }) => getCurrentProfile({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentProfile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCurrentProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCurrentProfile>>
+>;
+export type GetCurrentProfileQueryError = ErrorType<void>;
+
+/**
+ * @summary Get current user profile
+ */
+
+export function useGetCurrentProfile<
+  TData = Awaited<ReturnType<typeof getCurrentProfile>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentProfile>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCurrentProfileQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update current user profile
+ */
+export const getUpdateCurrentProfileUrl = () => {
+  return `/api/profile`;
+};
+
+export const updateCurrentProfile = async (
+  updateUserProfileRequest: UpdateUserProfileRequest,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getUpdateCurrentProfileUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateUserProfileRequest),
+  });
+};
+
+export const getUpdateCurrentProfileMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCurrentProfile>>,
+    TError,
+    { data: BodyType<UpdateUserProfileRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCurrentProfile>>,
+  TError,
+  { data: BodyType<UpdateUserProfileRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateCurrentProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCurrentProfile>>,
+    { data: BodyType<UpdateUserProfileRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateCurrentProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCurrentProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCurrentProfile>>
+>;
+export type UpdateCurrentProfileMutationBody =
+  BodyType<UpdateUserProfileRequest>;
+export type UpdateCurrentProfileMutationError = ErrorType<void>;
+
+/**
+ * @summary Update current user profile
+ */
+export const useUpdateCurrentProfile = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCurrentProfile>>,
+    TError,
+    { data: BodyType<UpdateUserProfileRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCurrentProfile>>,
+  TError,
+  { data: BodyType<UpdateUserProfileRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateCurrentProfileMutationOptions(options));
+};
+
+/**
+ * @summary List service reports visible to the current user
  */
 export const getListServiceReportsUrl = () => {
   return `/api/service-reports`;
@@ -131,7 +295,7 @@ export const getListServiceReportsQueryKey = () => {
 
 export const getListServiceReportsQueryOptions = <
   TData = Awaited<ReturnType<typeof listServiceReports>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
 >(options?: {
   query?: UseQueryOptions<
     Awaited<ReturnType<typeof listServiceReports>>,
@@ -158,15 +322,15 @@ export const getListServiceReportsQueryOptions = <
 export type ListServiceReportsQueryResult = NonNullable<
   Awaited<ReturnType<typeof listServiceReports>>
 >;
-export type ListServiceReportsQueryError = ErrorType<unknown>;
+export type ListServiceReportsQueryError = ErrorType<void>;
 
 /**
- * @summary List service reports
+ * @summary List service reports visible to the current user
  */
 
 export function useListServiceReports<
   TData = Awaited<ReturnType<typeof listServiceReports>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
 >(options?: {
   query?: UseQueryOptions<
     Awaited<ReturnType<typeof listServiceReports>>,
@@ -185,7 +349,7 @@ export function useListServiceReports<
 }
 
 /**
- * @summary Create a service report
+ * @summary Create a service report for the current user
  */
 export const getCreateServiceReportUrl = () => {
   return `/api/service-reports`;
@@ -204,7 +368,7 @@ export const createServiceReport = async (
 };
 
 export const getCreateServiceReportMutationOptions = <
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -246,13 +410,13 @@ export type CreateServiceReportMutationResult = NonNullable<
 >;
 export type CreateServiceReportMutationBody =
   BodyType<CreateServiceReportRequest>;
-export type CreateServiceReportMutationError = ErrorType<unknown>;
+export type CreateServiceReportMutationError = ErrorType<void>;
 
 /**
- * @summary Create a service report
+ * @summary Create a service report for the current user
  */
 export const useCreateServiceReport = <
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -272,7 +436,7 @@ export const useCreateServiceReport = <
 };
 
 /**
- * @summary Update review status and notes
+ * @summary Update review status and notes, supervisor only
  */
 export const getUpdateServiceReportUrl = (id: number) => {
   return `/api/service-reports/${id}`;
@@ -337,7 +501,7 @@ export type UpdateServiceReportMutationBody =
 export type UpdateServiceReportMutationError = ErrorType<void>;
 
 /**
- * @summary Update review status and notes
+ * @summary Update review status and notes, supervisor only
  */
 export const useUpdateServiceReport = <
   TError = ErrorType<void>,
@@ -360,7 +524,7 @@ export const useUpdateServiceReport = <
 };
 
 /**
- * @summary Dashboard totals for service reports
+ * @summary Dashboard totals for reports visible to the current user
  */
 export const getGetServiceReportsSummaryUrl = () => {
   return `/api/service-reports/summary`;
@@ -381,7 +545,7 @@ export const getGetServiceReportsSummaryQueryKey = () => {
 
 export const getGetServiceReportsSummaryQueryOptions = <
   TData = Awaited<ReturnType<typeof getServiceReportsSummary>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
 >(options?: {
   query?: UseQueryOptions<
     Awaited<ReturnType<typeof getServiceReportsSummary>>,
@@ -409,15 +573,15 @@ export const getGetServiceReportsSummaryQueryOptions = <
 export type GetServiceReportsSummaryQueryResult = NonNullable<
   Awaited<ReturnType<typeof getServiceReportsSummary>>
 >;
-export type GetServiceReportsSummaryQueryError = ErrorType<unknown>;
+export type GetServiceReportsSummaryQueryError = ErrorType<void>;
 
 /**
- * @summary Dashboard totals for service reports
+ * @summary Dashboard totals for reports visible to the current user
  */
 
 export function useGetServiceReportsSummary<
   TData = Awaited<ReturnType<typeof getServiceReportsSummary>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
 >(options?: {
   query?: UseQueryOptions<
     Awaited<ReturnType<typeof getServiceReportsSummary>>,

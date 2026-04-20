@@ -8,6 +8,9 @@
 
 export interface ServiceReport {
   id: number;
+  ownerUserId: string;
+  ownerName: string;
+  ownerEmail: string;
   technicianName: string;
   workDate: Date;
   shiftLabel: string;

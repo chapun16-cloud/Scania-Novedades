@@ -10,6 +10,7 @@ import {
   UpdateServiceReportResponse,
 } from "@workspace/api-zod";
 import { db, serviceReportsTable, type ServiceReport } from "@workspace/db";
+import { getOrCreateProfile, requireAuth, type AppRequest } from "./profiles";
 
 const router: IRouter = Router();
 
@@ -64,21 +65,34 @@ function calculateTotals(report: Pick<ServiceReport, (typeof hourFields)[number]
 function serializeReport(report: ServiceReport) {
   return {
     ...report,
+    ownerName: report.ownerName || report.technicianName,
+    ownerEmail: report.ownerEmail || "",
     ...calculateTotals(report),
     createdAt: report.createdAt.toISOString(),
   };
 }
 
-router.get("/service-reports", async (_req, res): Promise<void> => {
-  const reports = await db
+async function getVisibleReports(req: AppRequest): Promise<ServiceReport[]> {
+  const profile = await getOrCreateProfile(req);
+
+  if (profile.role === "supervisor") {
+    return db.select().from(serviceReportsTable).orderBy(desc(serviceReportsTable.createdAt));
+  }
+
+  return db
     .select()
     .from(serviceReportsTable)
+    .where(eq(serviceReportsTable.ownerUserId, req.userId!))
     .orderBy(desc(serviceReportsTable.createdAt));
+}
 
+router.get("/service-reports", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  const reports = await getVisibleReports(req);
   res.json(ListServiceReportsResponse.parse(reports.map(serializeReport)));
 });
 
-router.post("/service-reports", async (req, res): Promise<void> => {
+router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  const profile = await getOrCreateProfile(req);
   const parsed = CreateServiceReportBody.safeParse(req.body);
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.message }, "Invalid service report body");
@@ -86,10 +100,15 @@ router.post("/service-reports", async (req, res): Promise<void> => {
     return;
   }
 
+  const technicianName = parsed.data.technicianName || profile.displayName;
+
   const [report] = await db
     .insert(serviceReportsTable)
     .values({
-      technicianName: parsed.data.technicianName,
+      ownerUserId: profile.userId,
+      ownerName: profile.displayName || technicianName,
+      ownerEmail: profile.email,
+      technicianName,
       workDate: parsed.data.workDate,
       shiftLabel: parsed.data.shiftLabel ?? "",
       serviceActivity: parsed.data.serviceActivity,
@@ -112,7 +131,13 @@ router.post("/service-reports", async (req, res): Promise<void> => {
   res.status(201).json(ListServiceReportsResponseItem.parse(serializeReport(report)));
 });
 
-router.patch("/service-reports/:id", async (req, res): Promise<void> => {
+router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  const profile = await getOrCreateProfile(req);
+  if (profile.role !== "supervisor") {
+    res.status(403).json({ error: "Solo el supervisor puede revisar partes" });
+    return;
+  }
+
   const params = UpdateServiceReportParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -140,11 +165,8 @@ router.patch("/service-reports/:id", async (req, res): Promise<void> => {
   res.json(UpdateServiceReportResponse.parse(serializeReport(report)));
 });
 
-router.get("/service-reports/summary", async (_req, res): Promise<void> => {
-  const reports = await db
-    .select()
-    .from(serviceReportsTable)
-    .orderBy(desc(serviceReportsTable.createdAt));
+router.get("/service-reports/summary", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  const reports = await getVisibleReports(req);
 
   const summary = reports.reduce(
     (acc, report) => {

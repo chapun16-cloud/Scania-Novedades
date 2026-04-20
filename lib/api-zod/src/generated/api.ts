@@ -16,10 +16,45 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * @summary List service reports
+ * @summary Get current user profile
+ */
+export const GetCurrentProfileResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  displayName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["technician", "supervisor"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update current user profile
+ */
+
+export const UpdateCurrentProfileBody = zod.object({
+  displayName: zod.string().min(1).optional(),
+  role: zod.enum(["technician", "supervisor"]).optional(),
+});
+
+export const UpdateCurrentProfileResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  displayName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["technician", "supervisor"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List service reports visible to the current user
  */
 export const ListServiceReportsResponseItem = zod.object({
   id: zod.number(),
+  ownerUserId: zod.string(),
+  ownerName: zod.string(),
+  ownerEmail: zod.string(),
   technicianName: zod.string(),
   workDate: zod.coerce.date(),
   shiftLabel: zod.string(),
@@ -49,7 +84,7 @@ export const ListServiceReportsResponse = zod.array(
 );
 
 /**
- * @summary Create a service report
+ * @summary Create a service report for the current user
  */
 
 export const createServiceReportBodyOvertime50NormalMin = 0;
@@ -113,7 +148,7 @@ export const CreateServiceReportBody = zod.object({
 });
 
 /**
- * @summary Update review status and notes
+ * @summary Update review status and notes, supervisor only
  */
 export const UpdateServiceReportParams = zod.object({
   id: zod.coerce.number(),
@@ -126,6 +161,9 @@ export const UpdateServiceReportBody = zod.object({
 
 export const UpdateServiceReportResponse = zod.object({
   id: zod.number(),
+  ownerUserId: zod.string(),
+  ownerName: zod.string(),
+  ownerEmail: zod.string(),
   technicianName: zod.string(),
   workDate: zod.coerce.date(),
   shiftLabel: zod.string(),
@@ -152,7 +190,7 @@ export const UpdateServiceReportResponse = zod.object({
 });
 
 /**
- * @summary Dashboard totals for service reports
+ * @summary Dashboard totals for reports visible to the current user
  */
 export const GetServiceReportsSummaryResponse = zod.object({
   totalReports: zod.number(),

@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 
-export function ReportsList({ reports }: { reports: ServiceReport[] }) {
+export function ReportsList({ reports, canReview = false }: { reports: ServiceReport[]; canReview?: boolean }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   if (reports.length === 0) {
@@ -26,6 +26,7 @@ export function ReportsList({ reports }: { reports: ServiceReport[] }) {
         <ReportRow 
           key={report.id} 
           report={report} 
+          canReview={canReview}
           isExpanded={expandedId === report.id}
           onToggle={() => setExpandedId(expandedId === report.id ? null : report.id)}
         />
@@ -34,7 +35,7 @@ export function ReportsList({ reports }: { reports: ServiceReport[] }) {
   );
 }
 
-function ReportRow({ report, isExpanded, onToggle }: { report: ServiceReport, isExpanded: boolean, onToggle: () => void }) {
+function ReportRow({ report, canReview, isExpanded, onToggle }: { report: ServiceReport, canReview: boolean, isExpanded: boolean, onToggle: () => void }) {
   const queryClient = useQueryClient();
   const updateReport = useUpdateServiceReport();
   const { toast } = useToast();
@@ -158,16 +159,18 @@ function ReportRow({ report, isExpanded, onToggle }: { report: ServiceReport, is
 
             {/* Revisión y notas */}
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Revisión</h4>
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{canReview ? "Revisión" : "Estado"}</h4>
               
               <div className="space-y-3">
                 <Textarea 
                   value={notes} 
                   onChange={(e) => setNotes(e.target.value)} 
                   placeholder="Notas de revisión..." 
+                  readOnly={!canReview}
                   className="h-24 resize-none bg-card text-sm"
                 />
                 
+                {canReview ? (
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 
@@ -192,6 +195,11 @@ function ReportRow({ report, isExpanded, onToggle }: { report: ServiceReport, is
                     </Button>
                   )}
                 </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {report.reviewed ? "Este parte ya fue revisado por supervisión." : "Pendiente de revisión por supervisión."}
+                  </p>
+                )}
               </div>
             </div>
 

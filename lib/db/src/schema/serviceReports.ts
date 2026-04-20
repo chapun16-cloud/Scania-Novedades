@@ -12,6 +12,9 @@ import { z } from "zod/v4";
 
 export const serviceReportsTable = pgTable("service_reports", {
   id: serial("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull().default("legacy"),
+  ownerName: text("owner_name").notNull().default(""),
+  ownerEmail: text("owner_email").notNull().default(""),
   technicianName: text("technician_name").notNull(),
   workDate: date("work_date").notNull(),
   shiftLabel: text("shift_label").notNull().default(""),

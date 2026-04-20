@@ -11,3 +11,6 @@ export * from "./healthStatus";
 export * from "./serviceReport";
 export * from "./serviceReportsSummary";
 export * from "./updateServiceReportRequest";
+export * from "./updateUserProfileRequest";
+export * from "./userProfile";
+export * from "./userRole";

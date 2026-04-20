@@ -9,8 +9,34 @@ export interface HealthStatus {
   status: string;
 }
 
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export const UserRole = {
+  technician: "technician",
+  supervisor: "supervisor",
+} as const;
+
+export interface UserProfile {
+  id: number;
+  userId: string;
+  displayName: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateUserProfileRequest {
+  /** @minLength 1 */
+  displayName?: string;
+  role?: UserRole;
+}
+
 export interface ServiceReport {
   id: number;
+  ownerUserId: string;
+  ownerName: string;
+  ownerEmail: string;
   technicianName: string;
   workDate: string;
   shiftLabel: string;

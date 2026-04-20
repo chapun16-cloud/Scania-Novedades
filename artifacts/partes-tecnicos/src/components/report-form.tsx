@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +35,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function ReportForm() {
+export function ReportForm({ defaultTechnicianName = "" }: { defaultTechnicianName?: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createReport = useCreateServiceReport();
@@ -42,7 +43,7 @@ export function ReportForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      technicianName: "",
+      technicianName: defaultTechnicianName,
       workDate: new Date().toISOString().split('T')[0],
       shiftLabel: "Mañana",
       serviceActivity: "",
@@ -61,6 +62,12 @@ export function ReportForm() {
       notes: "",
     }
   });
+
+  useEffect(() => {
+    if (defaultTechnicianName && !form.getValues("technicianName")) {
+      form.setValue("technicianName", defaultTechnicianName);
+    }
+  }, [defaultTechnicianName, form]);
 
   function onSubmit(data: FormValues) {
     createReport.mutate({ data: { ...data, soloKm40: data.soloKm40Hours > 0 } }, {
@@ -95,7 +102,7 @@ export function ReportForm() {
               <FormItem>
                 <FormLabel className="font-semibold text-secondary">Técnico / Mecánico</FormLabel>
                 <FormControl>
-                  <Input placeholder="Nombre completo" {...field} className="bg-muted/50" />
+                  <Input placeholder="Nombre completo" {...field} readOnly className="bg-muted/50" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

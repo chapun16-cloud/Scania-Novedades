@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: profiles
+    description: User profile operations
   - name: serviceReports
     description: Service report operations
 paths:
@@ -26,11 +28,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /profile:
+    get:
+      operationId: getCurrentProfile
+      tags: [profiles]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+    patch:
+      operationId: updateCurrentProfile
+      tags: [profiles]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserProfileRequest"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
   /service-reports:
     get:
       operationId: listServiceReports
       tags: [serviceReports]
-      summary: List service reports
+      summary: List service reports visible to the current user
       responses:
         "200":
           description: Service reports
@@ -40,10 +75,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ServiceReport"
+        "401":
+          description: Unauthorized
     post:
       operationId: createServiceReport
       tags: [serviceReports]
-      summary: Create a service report
+      summary: Create a service report for the current user
       requestBody:
         required: true
         content:
@@ -57,11 +94,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceReport"
+        "401":
+          description: Unauthorized
   /service-reports/{id}:
     patch:
       operationId: updateServiceReport
       tags: [serviceReports]
-      summary: Update review status and notes
+      summary: Update review status and notes, supervisor only
       parameters:
         - name: id
           in: path
@@ -81,13 +120,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceReport"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Supervisor role required
         "404":
           description: Report not found
   /service-reports/summary:
     get:
       operationId: getServiceReportsSummary
       tags: [serviceReports]
-      summary: Dashboard totals for service reports
+      summary: Dashboard totals for reports visible to the current user
       responses:
         "200":
           description: Service report summary
@@ -95,6 +138,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceReportsSummary"
+        "401":
+          description: Unauthorized
 components:
   schemas:
     HealthStatus:
@@ -104,11 +149,58 @@ components:
           type: string
       required:
         - status
+    UserRole:
+      type: string
+      enum:
+        - technician
+        - supervisor
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - displayName
+        - email
+        - role
+        - createdAt
+        - updatedAt
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+        role:
+          $ref: "#/components/schemas/UserRole"
+      minProperties: 1
     ServiceReport:
       type: object
       properties:
         id:
           type: integer
+        ownerUserId:
+          type: string
+        ownerName:
+          type: string
+        ownerEmail:
+          type: string
         technicianName:
           type: string
         workDate:
@@ -159,6 +251,9 @@ components:
           format: date-time
       required:
         - id
+        - ownerUserId
+        - ownerName
+        - ownerEmail
         - technicianName
         - workDate
         - shiftLabel
