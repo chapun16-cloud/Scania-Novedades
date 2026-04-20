@@ -18,7 +18,7 @@ export default function Home() {
             <Wrench className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Partes de Técnicos</h1>
+            <h1 className="text-xl font-bold tracking-tight">SCANIA</h1>
             <p className="text-xs text-secondary-foreground/70 font-mono">PANEL DE CONTROL TÉCNICO</p>
           </div>
         </div>
