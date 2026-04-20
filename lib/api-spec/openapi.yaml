@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: serviceReports
+    description: Service report operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /service-reports:
+    get:
+      operationId: listServiceReports
+      tags: [serviceReports]
+      summary: List service reports
+      responses:
+        "200":
+          description: Service reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceReport"
+    post:
+      operationId: createServiceReport
+      tags: [serviceReports]
+      summary: Create a service report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceReportRequest"
+      responses:
+        "201":
+          description: Created report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReport"
+  /service-reports/{id}:
+    patch:
+      operationId: updateServiceReport
+      tags: [serviceReports]
+      summary: Update review status and notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceReportRequest"
+      responses:
+        "200":
+          description: Updated report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReport"
+        "404":
+          description: Report not found
+  /service-reports/summary:
+    get:
+      operationId: getServiceReportsSummary
+      tags: [serviceReports]
+      summary: Dashboard totals for service reports
+      responses:
+        "200":
+          description: Service report summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReportsSummary"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +104,181 @@ components:
           type: string
       required:
         - status
-
+    ServiceReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        technicianName:
+          type: string
+        workDate:
+          type: string
+          format: date
+        shiftLabel:
+          type: string
+        serviceActivity:
+          type: string
+        overtime50Normal:
+          type: number
+        overtime50NormalKm40:
+          type: number
+        overtime50WeekendHoliday:
+          type: number
+        overtime50WeekendHolidayKm40:
+          type: number
+        overtime100Normal:
+          type: number
+        overtime100NormalKm40:
+          type: number
+        overtime100WeekendHoliday:
+          type: number
+        overtime100WeekendHolidayKm40:
+          type: number
+        soloKm40:
+          type: boolean
+        technicalAssistanceGuard:
+          type: number
+        fieldActivation:
+          type: number
+        total50Hours:
+          type: number
+        total100Hours:
+          type: number
+        totalKm40Items:
+          type: integer
+        totalAdditionalItems:
+          type: number
+        reviewed:
+          type: boolean
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - technicianName
+        - workDate
+        - shiftLabel
+        - serviceActivity
+        - overtime50Normal
+        - overtime50NormalKm40
+        - overtime50WeekendHoliday
+        - overtime50WeekendHolidayKm40
+        - overtime100Normal
+        - overtime100NormalKm40
+        - overtime100WeekendHoliday
+        - overtime100WeekendHolidayKm40
+        - soloKm40
+        - technicalAssistanceGuard
+        - fieldActivation
+        - total50Hours
+        - total100Hours
+        - totalKm40Items
+        - totalAdditionalItems
+        - reviewed
+        - notes
+        - createdAt
+    CreateServiceReportRequest:
+      type: object
+      properties:
+        technicianName:
+          type: string
+          minLength: 1
+        workDate:
+          type: string
+          format: date
+        shiftLabel:
+          type: string
+        serviceActivity:
+          type: string
+          minLength: 1
+        overtime50Normal:
+          type: number
+          minimum: 0
+        overtime50NormalKm40:
+          type: number
+          minimum: 0
+        overtime50WeekendHoliday:
+          type: number
+          minimum: 0
+        overtime50WeekendHolidayKm40:
+          type: number
+          minimum: 0
+        overtime100Normal:
+          type: number
+          minimum: 0
+        overtime100NormalKm40:
+          type: number
+          minimum: 0
+        overtime100WeekendHoliday:
+          type: number
+          minimum: 0
+        overtime100WeekendHolidayKm40:
+          type: number
+          minimum: 0
+        soloKm40:
+          type: boolean
+        technicalAssistanceGuard:
+          type: number
+          minimum: 0
+        fieldActivation:
+          type: number
+          minimum: 0
+        notes:
+          type: string
+      required:
+        - technicianName
+        - workDate
+        - serviceActivity
+        - overtime50Normal
+        - overtime50NormalKm40
+        - overtime50WeekendHoliday
+        - overtime50WeekendHolidayKm40
+        - overtime100Normal
+        - overtime100NormalKm40
+        - overtime100WeekendHoliday
+        - overtime100WeekendHolidayKm40
+        - soloKm40
+        - technicalAssistanceGuard
+        - fieldActivation
+    UpdateServiceReportRequest:
+      type: object
+      properties:
+        reviewed:
+          type: boolean
+        notes:
+          type: string
+      minProperties: 1
+    ServiceReportsSummary:
+      type: object
+      properties:
+        totalReports:
+          type: integer
+        pendingReview:
+          type: integer
+        reviewedReports:
+          type: integer
+        total50Hours:
+          type: number
+        total100Hours:
+          type: number
+        totalKm40Items:
+          type: integer
+        totalGuardias:
+          type: number
+        totalActivaciones:
+          type: number
+        latestReportDate:
+          type: string
+          nullable: true
+      required:
+        - totalReports
+        - pendingReview
+        - reviewedReports
+        - total50Hours
+        - total100Hours
+        - totalKm40Items
+        - totalGuardias
+        - totalActivaciones
+        - latestReportDate

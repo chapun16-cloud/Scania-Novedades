@@ -8,3 +8,77 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ServiceReport {
+  id: number;
+  technicianName: string;
+  workDate: string;
+  shiftLabel: string;
+  serviceActivity: string;
+  overtime50Normal: number;
+  overtime50NormalKm40: number;
+  overtime50WeekendHoliday: number;
+  overtime50WeekendHolidayKm40: number;
+  overtime100Normal: number;
+  overtime100NormalKm40: number;
+  overtime100WeekendHoliday: number;
+  overtime100WeekendHolidayKm40: number;
+  soloKm40: boolean;
+  technicalAssistanceGuard: number;
+  fieldActivation: number;
+  total50Hours: number;
+  total100Hours: number;
+  totalKm40Items: number;
+  totalAdditionalItems: number;
+  reviewed: boolean;
+  notes: string;
+  createdAt: string;
+}
+
+export interface CreateServiceReportRequest {
+  /** @minLength 1 */
+  technicianName: string;
+  workDate: string;
+  shiftLabel?: string;
+  /** @minLength 1 */
+  serviceActivity: string;
+  /** @minimum 0 */
+  overtime50Normal: number;
+  /** @minimum 0 */
+  overtime50NormalKm40: number;
+  /** @minimum 0 */
+  overtime50WeekendHoliday: number;
+  /** @minimum 0 */
+  overtime50WeekendHolidayKm40: number;
+  /** @minimum 0 */
+  overtime100Normal: number;
+  /** @minimum 0 */
+  overtime100NormalKm40: number;
+  /** @minimum 0 */
+  overtime100WeekendHoliday: number;
+  /** @minimum 0 */
+  overtime100WeekendHolidayKm40: number;
+  soloKm40: boolean;
+  /** @minimum 0 */
+  technicalAssistanceGuard: number;
+  /** @minimum 0 */
+  fieldActivation: number;
+  notes?: string;
+}
+
+export interface UpdateServiceReportRequest {
+  reviewed?: boolean;
+  notes?: string;
+}
+
+export interface ServiceReportsSummary {
+  totalReports: number;
+  pendingReview: number;
+  reviewedReports: number;
+  total50Hours: number;
+  total100Hours: number;
+  totalKm40Items: number;
+  totalGuardias: number;
+  totalActivaciones: number;
+  latestReportDate: string | null;
+}

@@ -5,18 +5,27 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  CreateServiceReportRequest,
+  HealthStatus,
+  ServiceReport,
+  ServiceReportsSummary,
+  UpdateServiceReportRequest,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +101,332 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List service reports
+ */
+export const getListServiceReportsUrl = () => {
+  return `/api/service-reports`;
+};
+
+export const listServiceReports = async (
+  options?: RequestInit,
+): Promise<ServiceReport[]> => {
+  return customFetch<ServiceReport[]>(getListServiceReportsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListServiceReportsQueryKey = () => {
+  return [`/api/service-reports`] as const;
+};
+
+export const getListServiceReportsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listServiceReports>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServiceReports>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListServiceReportsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listServiceReports>>
+  > = ({ signal }) => listServiceReports({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listServiceReports>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListServiceReportsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listServiceReports>>
+>;
+export type ListServiceReportsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List service reports
+ */
+
+export function useListServiceReports<
+  TData = Awaited<ReturnType<typeof listServiceReports>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServiceReports>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListServiceReportsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a service report
+ */
+export const getCreateServiceReportUrl = () => {
+  return `/api/service-reports`;
+};
+
+export const createServiceReport = async (
+  createServiceReportRequest: CreateServiceReportRequest,
+  options?: RequestInit,
+): Promise<ServiceReport> => {
+  return customFetch<ServiceReport>(getCreateServiceReportUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createServiceReportRequest),
+  });
+};
+
+export const getCreateServiceReportMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createServiceReport>>,
+    TError,
+    { data: BodyType<CreateServiceReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createServiceReport>>,
+  TError,
+  { data: BodyType<CreateServiceReportRequest> },
+  TContext
+> => {
+  const mutationKey = ["createServiceReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createServiceReport>>,
+    { data: BodyType<CreateServiceReportRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createServiceReport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateServiceReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createServiceReport>>
+>;
+export type CreateServiceReportMutationBody =
+  BodyType<CreateServiceReportRequest>;
+export type CreateServiceReportMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a service report
+ */
+export const useCreateServiceReport = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createServiceReport>>,
+    TError,
+    { data: BodyType<CreateServiceReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createServiceReport>>,
+  TError,
+  { data: BodyType<CreateServiceReportRequest> },
+  TContext
+> => {
+  return useMutation(getCreateServiceReportMutationOptions(options));
+};
+
+/**
+ * @summary Update review status and notes
+ */
+export const getUpdateServiceReportUrl = (id: number) => {
+  return `/api/service-reports/${id}`;
+};
+
+export const updateServiceReport = async (
+  id: number,
+  updateServiceReportRequest: UpdateServiceReportRequest,
+  options?: RequestInit,
+): Promise<ServiceReport> => {
+  return customFetch<ServiceReport>(getUpdateServiceReportUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateServiceReportRequest),
+  });
+};
+
+export const getUpdateServiceReportMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateServiceReport>>,
+    TError,
+    { id: number; data: BodyType<UpdateServiceReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateServiceReport>>,
+  TError,
+  { id: number; data: BodyType<UpdateServiceReportRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateServiceReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateServiceReport>>,
+    { id: number; data: BodyType<UpdateServiceReportRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateServiceReport(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateServiceReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateServiceReport>>
+>;
+export type UpdateServiceReportMutationBody =
+  BodyType<UpdateServiceReportRequest>;
+export type UpdateServiceReportMutationError = ErrorType<void>;
+
+/**
+ * @summary Update review status and notes
+ */
+export const useUpdateServiceReport = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateServiceReport>>,
+    TError,
+    { id: number; data: BodyType<UpdateServiceReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateServiceReport>>,
+  TError,
+  { id: number; data: BodyType<UpdateServiceReportRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateServiceReportMutationOptions(options));
+};
+
+/**
+ * @summary Dashboard totals for service reports
+ */
+export const getGetServiceReportsSummaryUrl = () => {
+  return `/api/service-reports/summary`;
+};
+
+export const getServiceReportsSummary = async (
+  options?: RequestInit,
+): Promise<ServiceReportsSummary> => {
+  return customFetch<ServiceReportsSummary>(getGetServiceReportsSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetServiceReportsSummaryQueryKey = () => {
+  return [`/api/service-reports/summary`] as const;
+};
+
+export const getGetServiceReportsSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getServiceReportsSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getServiceReportsSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetServiceReportsSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getServiceReportsSummary>>
+  > = ({ signal }) => getServiceReportsSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getServiceReportsSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetServiceReportsSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getServiceReportsSummary>>
+>;
+export type GetServiceReportsSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Dashboard totals for service reports
+ */
+
+export function useGetServiceReportsSummary<
+  TData = Awaited<ReturnType<typeof getServiceReportsSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getServiceReportsSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetServiceReportsSummaryQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

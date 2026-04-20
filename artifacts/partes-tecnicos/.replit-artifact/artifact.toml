@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Partes de Técnicos"
+version = "1.0.0"
+id = "artifacts/partes-tecnicos"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23774
+
+[services.development]
+run = "pnpm --filter @workspace/partes-tecnicos run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/partes-tecnicos", "run", "build" ]
+publicDir = "artifacts/partes-tecnicos/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23774"
+BASE_PATH = "/"
