@@ -1,0 +1,249 @@
+import * as XLSX from "xlsx";
+import type { ServiceReport } from "@workspace/api-client-react";
+
+interface TechnicianTotals {
+  apellido: string;
+  nombre: string;
+  legajo: string;
+  sucursal: string;
+  technicalAssistanceGuard: number;
+  fieldActivation: number;
+  overtime50WeekendHoliday: number;
+  overtime50Normal: number;
+  overtime100WeekendHoliday: number;
+  overtime100Normal: number;
+  overtime50WeekendHolidayKm40: number;
+  overtime50NormalKm40: number;
+  overtime100WeekendHolidayKm40: number;
+  overtime100NormalKm40: number;
+  soloKm40Hours: number;
+  notes: string;
+}
+
+function splitName(fullName: string): { apellido: string; nombre: string } {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return { nombre: parts[0], apellido: "" };
+  const nombre = parts[0];
+  const apellido = parts.slice(1).join(" ");
+  return { nombre, apellido };
+}
+
+function groupByTechnician(reports: ServiceReport[]): TechnicianTotals[] {
+  const map = new Map<string, TechnicianTotals>();
+
+  for (const r of reports) {
+    const key = r.ownerUserId || r.technicianName;
+    if (!map.has(key)) {
+      const { nombre, apellido } = splitName(r.ownerName || r.technicianName);
+      map.set(key, {
+        apellido,
+        nombre,
+        legajo: "",
+        sucursal: "NORTE",
+        technicalAssistanceGuard: 0,
+        fieldActivation: 0,
+        overtime50WeekendHoliday: 0,
+        overtime50Normal: 0,
+        overtime100WeekendHoliday: 0,
+        overtime100Normal: 0,
+        overtime50WeekendHolidayKm40: 0,
+        overtime50NormalKm40: 0,
+        overtime100WeekendHolidayKm40: 0,
+        overtime100NormalKm40: 0,
+        soloKm40Hours: 0,
+        notes: "",
+      });
+    }
+    const t = map.get(key)!;
+    t.technicalAssistanceGuard += Number(r.technicalAssistanceGuard ?? 0);
+    t.fieldActivation += Number(r.fieldActivation ?? 0);
+    t.overtime50WeekendHoliday += Number(r.overtime50WeekendHoliday ?? 0);
+    t.overtime50Normal += Number(r.overtime50Normal ?? 0);
+    t.overtime100WeekendHoliday += Number(r.overtime100WeekendHoliday ?? 0);
+    t.overtime100Normal += Number(r.overtime100Normal ?? 0);
+    t.overtime50WeekendHolidayKm40 += Number(r.overtime50WeekendHolidayKm40 ?? 0);
+    t.overtime50NormalKm40 += Number(r.overtime50NormalKm40 ?? 0);
+    t.overtime100WeekendHolidayKm40 += Number(r.overtime100WeekendHolidayKm40 ?? 0);
+    t.overtime100NormalKm40 += Number(r.overtime100NormalKm40 ?? 0);
+    t.soloKm40Hours += Number(r.soloKm40Hours ?? 0);
+    if (r.notes) t.notes = [t.notes, r.notes].filter(Boolean).join("; ");
+  }
+
+  return Array.from(map.values()).sort((a, b) =>
+    a.apellido.localeCompare(b.apellido, "es"),
+  );
+}
+
+export function exportReportsToExcel(reports: ServiceReport[], filename?: string) {
+  const technicians = groupByTechnician(reports);
+
+  const sheetData: (string | number)[][] = [
+    // Row 1
+    [
+      "Legajo", "Sucursal", "Apellido", "Nombre",
+      "Guardias", "Activaciones SOS",
+      "Horas Extras Normales ( No incluye Assistance)", "", "", "",
+      "Suplemento viatico - > Asistencia Técnica", "", "", "", "", "",
+      "DESCONTAR", "", "",
+      "Otros Comentarios  - Especificar",
+    ],
+    // Row 2
+    [
+      "", "", "", "",
+      "Asistencia Técnica", "Utilización SOS",
+      "", "", "", "",
+      "Horas Extras a más de 40 km.", "", "", "", "Horas Normales",
+      "Total de Horas de Suplemento Viatico",
+      "", "", "", "",
+    ],
+    // Row 3
+    [
+      "", "", "", "", "", "",
+      "Fin de semana, Feriados y Día Inhabiles", "Resto",
+      "Fin de semana, Feriados y Día Inhabiles", "Resto",
+      "Fin de semana, Feriados y Día Inhabiles", "Resto",
+      "Fin de semana, Feriados y Día Inhabiles", "Resto",
+      "", "", "", "", "", "",
+    ],
+    // Row 4
+    [
+      "", "", "", "", "", "",
+      "Al 50%", "", "Al 100%", "",
+      "Al 50%", "", "Al 100%", "",
+      "", "", "", "", "", "",
+    ],
+    // Row 5
+    [
+      "", "", "", "", "52,01", "52,04",
+      "Horas", "Horas", "Horas", "Horas",
+      "Horas", "Horas", "Horas", "Horas",
+      "Horas", "Horas",
+      "Lic sin Goce de Sueldo", "Ausencias Injustificadas", "Horas",
+      "N° OT, Ausencias por Vacaciones, días flex, otras ausencias",
+    ],
+    // Row 6 (info row)
+    [
+      "", "", "", "",
+      "Cargar cantidad de Guardias", "Cargar cantidad de Utilizaciones",
+      "", "", "", "", "", "", "", "", "", "", "", "", "",
+      "N° OT, Ausencias por Vacaciones, días flex, otras ausencias",
+    ],
+    // Row 7 (empty separator)
+    Array(20).fill(""),
+  ];
+
+  // Data rows — one per technician
+  for (const t of technicians) {
+    sheetData.push([
+      t.legajo,
+      t.sucursal,
+      t.apellido,
+      t.nombre,
+      t.technicalAssistanceGuard || "",
+      t.fieldActivation || "",
+      t.overtime50WeekendHoliday || "",
+      t.overtime50Normal || "",
+      t.overtime100WeekendHoliday || "",
+      t.overtime100Normal || "",
+      t.overtime50WeekendHolidayKm40 || "",
+      t.overtime50NormalKm40 || "",
+      t.overtime100WeekendHolidayKm40 || "",
+      t.overtime100NormalKm40 || "",
+      "",
+      t.soloKm40Hours || "",
+      "",
+      "",
+      "",
+      t.notes || "",
+    ]);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+  // Merge cells for the multi-row headers
+  ws["!merges"] = [
+    // Legajo
+    { s: { r: 0, c: 0 }, e: { r: 4, c: 0 } },
+    // Sucursal
+    { s: { r: 0, c: 1 }, e: { r: 4, c: 1 } },
+    // Apellido
+    { s: { r: 0, c: 2 }, e: { r: 4, c: 2 } },
+    // Nombre
+    { s: { r: 0, c: 3 }, e: { r: 4, c: 3 } },
+    // Guardias
+    { s: { r: 0, c: 4 }, e: { r: 0, c: 4 } },
+    { s: { r: 1, c: 4 }, e: { r: 4, c: 4 } },
+    // Activaciones SOS
+    { s: { r: 0, c: 5 }, e: { r: 0, c: 5 } },
+    { s: { r: 1, c: 5 }, e: { r: 4, c: 5 } },
+    // Horas Extras Normales — spans cols 6-9
+    { s: { r: 0, c: 6 }, e: { r: 0, c: 9 } },
+    // Fin de Sem/Fer 50% → cols 6, rows 2-3
+    { s: { r: 2, c: 6 }, e: { r: 3, c: 6 } },
+    // Resto 50% → col 7, rows 2-3
+    { s: { r: 2, c: 7 }, e: { r: 3, c: 7 } },
+    // Fin de Sem/Fer 100% → col 8, rows 2-3
+    { s: { r: 2, c: 8 }, e: { r: 3, c: 8 } },
+    // Resto 100% → col 9, rows 2-3
+    { s: { r: 2, c: 9 }, e: { r: 3, c: 9 } },
+    // Suplemento viatico header — spans cols 10-15
+    { s: { r: 0, c: 10 }, e: { r: 0, c: 15 } },
+    // Horas Extras a más de 40 km. — cols 10-13, row 1
+    { s: { r: 1, c: 10 }, e: { r: 1, c: 13 } },
+    // Fin de Sem/Fer 50% km40 → col 10, rows 2-3
+    { s: { r: 2, c: 10 }, e: { r: 3, c: 10 } },
+    // Resto 50% km40 → col 11, rows 2-3
+    { s: { r: 2, c: 11 }, e: { r: 3, c: 11 } },
+    // Fin de Sem/Fer 100% km40 → col 12, rows 2-3
+    { s: { r: 2, c: 12 }, e: { r: 3, c: 12 } },
+    // Resto 100% km40 → col 13, rows 2-3
+    { s: { r: 2, c: 13 }, e: { r: 3, c: 13 } },
+    // Horas Normales — col 14, rows 0-4
+    { s: { r: 0, c: 14 }, e: { r: 4, c: 14 } },
+    // Total Horas Sup. Viatico — col 15, rows 1-4
+    { s: { r: 1, c: 15 }, e: { r: 4, c: 15 } },
+    // DESCONTAR — cols 16-18
+    { s: { r: 0, c: 16 }, e: { r: 0, c: 18 } },
+    // Lic sin Goce — col 16, rows 1-4
+    { s: { r: 1, c: 16 }, e: { r: 4, c: 16 } },
+    // Ausencias Injustificadas — col 17, rows 1-4
+    { s: { r: 1, c: 17 }, e: { r: 4, c: 17 } },
+    // Horas Descontar — col 18, rows 1-4
+    { s: { r: 1, c: 18 }, e: { r: 4, c: 18 } },
+    // Otros comentarios — col 19, rows 0-4
+    { s: { r: 0, c: 19 }, e: { r: 4, c: 19 } },
+  ];
+
+  // Column widths
+  ws["!cols"] = [
+    { wch: 8 },  // Legajo
+    { wch: 10 }, // Sucursal
+    { wch: 18 }, // Apellido
+    { wch: 16 }, // Nombre
+    { wch: 10 }, // Guardias
+    { wch: 10 }, // Activaciones
+    { wch: 8 },  // HE 50% Fin Sem
+    { wch: 8 },  // HE 50% Resto
+    { wch: 8 },  // HE 100% Fin Sem
+    { wch: 8 },  // HE 100% Resto
+    { wch: 8 },  // km40 50% Fin Sem
+    { wch: 8 },  // km40 50% Resto
+    { wch: 8 },  // km40 100% Fin Sem
+    { wch: 8 },  // km40 100% Resto
+    { wch: 8 },  // Horas Normales
+    { wch: 10 }, // Total Sup Viatico
+    { wch: 10 }, // Lic sin Goce
+    { wch: 10 }, // Ausencias Injust
+    { wch: 8 },  // Horas Descontar
+    { wch: 40 }, // Comentarios
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "NOVEDADES");
+
+  const date = new Date();
+  const period = `${String(date.getMonth() + 1).padStart(2, "0")}_${date.getFullYear()}`;
+  const outputFilename = filename || `Novedades_SCANIA_${period}.xlsx`;
+
+  XLSX.writeFile(wb, outputFilename);
+}

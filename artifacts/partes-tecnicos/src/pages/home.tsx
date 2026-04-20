@@ -17,7 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
-import { Wrench, LayoutDashboard, LogOut } from "lucide-react";
+import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet } from "lucide-react";
+import { exportReportsToExcel } from "@/lib/exportExcel";
 
 export default function Home() {
   const { signOut } = useClerk();
@@ -131,13 +132,24 @@ export default function Home() {
             ) : null}
 
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-              <div className="p-6 border-b bg-muted/30 flex justify-between items-center">
+              <div className="p-6 border-b bg-muted/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-lg font-semibold">{isSupervisor ? "Partes del Equipo" : "Mis Partes"}</h2>
                   <p className="text-sm text-muted-foreground">
                     {isSupervisor ? "Historial y revisión de horas del equipo." : "Historial personal de tus partes cargados."}
                   </p>
                 </div>
+                {isSupervisor && reports && reports.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportReportsToExcel(reports)}
+                    className="shrink-0 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                )}
               </div>
               <div className="p-0">
                 {isLoadingReports ? (
