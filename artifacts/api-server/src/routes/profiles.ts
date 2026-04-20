@@ -34,6 +34,12 @@ export function requireAuth(req: AppRequest, res: Response, next: NextFunction):
     return;
   }
 
+  const email = getClaimString(claims, ["email", "email_address", "primary_email_address"]);
+  if (email && !email.toLowerCase().endsWith("@scania.com")) {
+    res.status(403).json({ error: "Acceso restringido al dominio @scania.com" });
+    return;
+  }
+
   req.userId = userId;
   next();
 }

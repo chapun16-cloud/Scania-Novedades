@@ -91,8 +91,7 @@ function LandingPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href="/sign-in"><Button variant="secondary">Ingresar</Button></Link>
-            <Link href="/sign-up"><Button>Crear cuenta</Button></Link>
+            <Link href="/sign-in"><Button>Ingresar</Button></Link>
           </div>
         </div>
       </header>
@@ -107,7 +106,6 @@ function LandingPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/sign-in"><Button size="lg" className="font-bold">Ingresar al panel</Button></Link>
-            <Link href="/sign-up"><Button size="lg" variant="outline">Registrar usuario</Button></Link>
           </div>
         </section>
         <section className="grid gap-4">
