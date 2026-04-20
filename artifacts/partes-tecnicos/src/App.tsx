@@ -13,9 +13,21 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
-import { Wrench, ShieldCheck, ClipboardList } from "lucide-react";
+import ProfileSetup from "@/pages/profile-setup";
+import { useGetCurrentProfile } from "@workspace/api-client-react";
+import { Wrench, ShieldCheck, ClipboardList, Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number } | null)?.status;
+        if (status && status >= 400 && status < 500) return false;
+        return failureCount < 2;
+      },
+    },
+  },
+});
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -91,7 +103,8 @@ function LandingPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href="/sign-in"><Button>Ingresar</Button></Link>
+            <Link href="/sign-in"><Button variant="secondary">Ingresar</Button></Link>
+            <Link href="/sign-up"><Button>Registrarse</Button></Link>
           </div>
         </div>
       </header>
@@ -101,11 +114,16 @@ function LandingPage() {
             Control de horas extras por perfil
           </div>
           <div className="space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-secondary">Carga de partes para técnicos y revisión para supervisores.</h2>
-            <p className="text-lg text-muted-foreground">Cada técnico accede a su propio historial. El supervisor puede ver el equipo completo, revisar notas y aprobar partes.</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-secondary">
+              Carga de partes para técnicos y revisión para supervisores.
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Cada técnico accede a su propio historial. El supervisor puede ver el equipo completo, revisar notas y aprobar partes.
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/sign-in"><Button size="lg" className="font-bold">Ingresar al panel</Button></Link>
+            <Link href="/sign-up"><Button size="lg" variant="outline">Crear cuenta nueva</Button></Link>
           </div>
         </section>
         <section className="grid gap-4">
@@ -164,6 +182,28 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+/** Checks if the signed-in user already has a profile; redirects to /setup if not. */
+function AppGuard() {
+  const { data: profile, isLoading, error } = useGetCurrentProfile();
+  const [, setLocation] = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const is404 = (error as { status?: number } | null)?.status === 404;
+  if (!profile || is404) {
+    setLocation("/setup");
+    return null;
+  }
+
+  return <Home />;
+}
+
 function HomeRedirect() {
   return (
     <>
@@ -181,10 +221,23 @@ function AppRoute() {
   return (
     <>
       <Show when="signed-in">
-        <Home />
+        <AppGuard />
       </Show>
       <Show when="signed-out">
         <Redirect to="/" />
+      </Show>
+    </>
+  );
+}
+
+function SetupRoute() {
+  return (
+    <>
+      <Show when="signed-in">
+        <ProfileSetup />
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/sign-in" />
       </Show>
     </>
   );
@@ -195,6 +248,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/app" component={AppRoute} />
+      <Route path="/setup" component={SetupRoute} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />

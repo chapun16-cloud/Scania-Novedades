@@ -87,12 +87,24 @@ async function getVisibleReports(req: AppRequest): Promise<ServiceReport[]> {
 }
 
 router.get("/service-reports", requireAuth, async (req: AppRequest, res): Promise<void> => {
-  const reports = await getVisibleReports(req);
-  res.json(ListServiceReportsResponse.parse(reports.map(serializeReport)));
+  try {
+    const reports = await getVisibleReports(req);
+    res.json(ListServiceReportsResponse.parse(reports.map(serializeReport)));
+  } catch (err: unknown) {
+    const e = err as { statusCode?: number; message?: string };
+    if (e.statusCode === 403) { res.status(403).json({ error: e.message }); return; }
+    throw err;
+  }
 });
 
 router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promise<void> => {
-  const profile = await getOrCreateProfile(req);
+  let profile;
+  try { profile = await getOrCreateProfile(req); }
+  catch (err: unknown) {
+    const e = err as { statusCode?: number; message?: string };
+    if (e.statusCode === 403) { res.status(403).json({ error: e.message }); return; }
+    throw err;
+  }
   const parsed = CreateServiceReportBody.safeParse(req.body);
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.message }, "Invalid service report body");
@@ -132,7 +144,13 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
 });
 
 router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): Promise<void> => {
-  const profile = await getOrCreateProfile(req);
+  let profile;
+  try { profile = await getOrCreateProfile(req); }
+  catch (err: unknown) {
+    const e = err as { statusCode?: number; message?: string };
+    if (e.statusCode === 403) { res.status(403).json({ error: e.message }); return; }
+    throw err;
+  }
   if (profile.role !== "supervisor") {
     res.status(403).json({ error: "Solo el supervisor puede revisar partes" });
     return;
@@ -166,7 +184,13 @@ router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): 
 });
 
 router.get("/service-reports/summary", requireAuth, async (req: AppRequest, res): Promise<void> => {
-  const reports = await getVisibleReports(req);
+  let reports;
+  try { reports = await getVisibleReports(req); }
+  catch (err: unknown) {
+    const e = err as { statusCode?: number; message?: string };
+    if (e.statusCode === 403) { res.status(403).json({ error: e.message }); return; }
+    throw err;
+  }
 
   const summary = reports.reduce(
     (acc, report) => {
