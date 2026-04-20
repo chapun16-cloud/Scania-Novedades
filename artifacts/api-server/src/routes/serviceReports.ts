@@ -22,6 +22,7 @@ const hourFields = [
   "overtime100NormalKm40",
   "overtime100WeekendHoliday",
   "overtime100WeekendHolidayKm40",
+  "soloKm40Hours",
   "technicalAssistanceGuard",
   "fieldActivation",
 ] as const;
@@ -46,9 +47,11 @@ function calculateTotals(report: Pick<ServiceReport, (typeof hourFields)[number]
     (toNumber(report.overtime50WeekendHolidayKm40) > 0 ? 1 : 0) +
     (toNumber(report.overtime100NormalKm40) > 0 ? 1 : 0) +
     (toNumber(report.overtime100WeekendHolidayKm40) > 0 ? 1 : 0) +
-    (report.soloKm40 ? 1 : 0);
+    (toNumber(report.soloKm40Hours) > 0 || report.soloKm40 ? 1 : 0);
   const totalAdditionalItems =
-    toNumber(report.technicalAssistanceGuard) + toNumber(report.fieldActivation);
+    toNumber(report.soloKm40Hours) +
+    toNumber(report.technicalAssistanceGuard) +
+    toNumber(report.fieldActivation);
 
   return {
     total50Hours,
@@ -98,7 +101,8 @@ router.post("/service-reports", async (req, res): Promise<void> => {
       overtime100NormalKm40: parsed.data.overtime100NormalKm40,
       overtime100WeekendHoliday: parsed.data.overtime100WeekendHoliday,
       overtime100WeekendHolidayKm40: parsed.data.overtime100WeekendHolidayKm40,
-      soloKm40: parsed.data.soloKm40,
+      soloKm40: parsed.data.soloKm40 || parsed.data.soloKm40Hours > 0,
+      soloKm40Hours: parsed.data.soloKm40Hours,
       technicalAssistanceGuard: parsed.data.technicalAssistanceGuard,
       fieldActivation: parsed.data.fieldActivation,
       notes: parsed.data.notes ?? "",
@@ -148,6 +152,7 @@ router.get("/service-reports/summary", async (_req, res): Promise<void> => {
       acc.total50Hours += totals.total50Hours;
       acc.total100Hours += totals.total100Hours;
       acc.totalKm40Items += totals.totalKm40Items;
+      acc.totalSoloKm40Hours += toNumber(report.soloKm40Hours);
       acc.totalGuardias += toNumber(report.technicalAssistanceGuard);
       acc.totalActivaciones += toNumber(report.fieldActivation);
       if (report.reviewed) {
@@ -164,6 +169,7 @@ router.get("/service-reports/summary", async (_req, res): Promise<void> => {
       total50Hours: 0,
       total100Hours: 0,
       totalKm40Items: 0,
+      totalSoloKm40Hours: 0,
       totalGuardias: 0,
       totalActivaciones: 0,
       latestReportDate: reports[0]?.workDate ?? null,

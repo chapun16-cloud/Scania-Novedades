@@ -13,6 +13,7 @@ export interface ServiceReportsSummary {
   total50Hours: number;
   total100Hours: number;
   totalKm40Items: number;
+  totalSoloKm40Hours: number;
   totalGuardias: number;
   totalActivaciones: number;
   latestReportDate: string | null;

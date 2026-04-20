@@ -138,12 +138,12 @@ function ReportRow({ report, isExpanded, onToggle }: { report: ServiceReport, is
               </div>
 
               {/* Adicionales */}
-              {(report.soloKm40 || report.technicalAssistanceGuard > 0 || report.fieldActivation > 0) && (
+              {(report.soloKm40Hours > 0 || report.soloKm40 || report.technicalAssistanceGuard > 0 || report.fieldActivation > 0) && (
                 <div>
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 mt-2">Adicionales</h4>
                   <div className="flex flex-wrap gap-2">
-                    {report.soloKm40 && (
-                      <Badge variant="outline" className="bg-card"><MapPin className="w-3 h-3 mr-1" /> Solo Km40</Badge>
+                    {(report.soloKm40Hours > 0 || report.soloKm40) && (
+                      <Badge variant="outline" className="bg-card"><MapPin className="w-3 h-3 mr-1" /> Solo +40km: {report.soloKm40Hours}h</Badge>
                     )}
                     {report.technicalAssistanceGuard > 0 && (
                       <Badge variant="outline" className="bg-card">Guardia: {report.technicalAssistanceGuard}</Badge>

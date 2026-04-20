@@ -136,6 +136,8 @@ components:
           type: number
         soloKm40:
           type: boolean
+        soloKm40Hours:
+          type: number
         technicalAssistanceGuard:
           type: number
         fieldActivation:
@@ -170,6 +172,7 @@ components:
         - overtime100WeekendHoliday
         - overtime100WeekendHolidayKm40
         - soloKm40
+        - soloKm40Hours
         - technicalAssistanceGuard
         - fieldActivation
         - total50Hours
@@ -219,6 +222,9 @@ components:
           minimum: 0
         soloKm40:
           type: boolean
+        soloKm40Hours:
+          type: number
+          minimum: 0
         technicalAssistanceGuard:
           type: number
           minimum: 0
@@ -240,6 +246,7 @@ components:
         - overtime100WeekendHoliday
         - overtime100WeekendHolidayKm40
         - soloKm40
+        - soloKm40Hours
         - technicalAssistanceGuard
         - fieldActivation
     UpdateServiceReportRequest:
@@ -265,6 +272,8 @@ components:
           type: number
         totalKm40Items:
           type: integer
+        totalSoloKm40Hours:
+          type: number
         totalGuardias:
           type: number
         totalActivaciones:
@@ -279,6 +288,7 @@ components:
         - total50Hours
         - total100Hours
         - totalKm40Items
+        - totalSoloKm40Hours
         - totalGuardias
         - totalActivaciones
         - latestReportDate

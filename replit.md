@@ -32,7 +32,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ## Data Model
 
-- `service_reports` stores technician reports with 50% and 100% overtime split by normal days and weekend/holiday categories, `+40km` variants, `solo +40km`, technical assistance guard, field activations, notes, review state, and timestamps.
+- `service_reports` stores technician reports with 50% and 100% overtime split by normal days and weekend/holiday categories, `+40km` variants, `solo +40km` hours, technical assistance guard, field activations, notes, review state, and timestamps.
 
 ## API Surface
 

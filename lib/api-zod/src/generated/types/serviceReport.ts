@@ -21,6 +21,7 @@ export interface ServiceReport {
   overtime100WeekendHoliday: number;
   overtime100WeekendHolidayKm40: number;
   soloKm40: boolean;
+  soloKm40Hours: number;
   technicalAssistanceGuard: number;
   fieldActivation: number;
   total50Hours: number;

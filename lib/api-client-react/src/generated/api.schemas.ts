@@ -24,6 +24,7 @@ export interface ServiceReport {
   overtime100WeekendHoliday: number;
   overtime100WeekendHolidayKm40: number;
   soloKm40: boolean;
+  soloKm40Hours: number;
   technicalAssistanceGuard: number;
   fieldActivation: number;
   total50Hours: number;
@@ -60,6 +61,8 @@ export interface CreateServiceReportRequest {
   overtime100WeekendHolidayKm40: number;
   soloKm40: boolean;
   /** @minimum 0 */
+  soloKm40Hours: number;
+  /** @minimum 0 */
   technicalAssistanceGuard: number;
   /** @minimum 0 */
   fieldActivation: number;
@@ -78,6 +81,7 @@ export interface ServiceReportsSummary {
   total50Hours: number;
   total100Hours: number;
   totalKm40Items: number;
+  totalSoloKm40Hours: number;
   totalGuardias: number;
   totalActivaciones: number;
   latestReportDate: string | null;

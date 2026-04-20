@@ -33,6 +33,7 @@ export const ListServiceReportsResponseItem = zod.object({
   overtime100WeekendHoliday: zod.number(),
   overtime100WeekendHolidayKm40: zod.number(),
   soloKm40: zod.boolean(),
+  soloKm40Hours: zod.number(),
   technicalAssistanceGuard: zod.number(),
   fieldActivation: zod.number(),
   total50Hours: zod.number(),
@@ -66,6 +67,8 @@ export const createServiceReportBodyOvertime100NormalKm40Min = 0;
 export const createServiceReportBodyOvertime100WeekendHolidayMin = 0;
 
 export const createServiceReportBodyOvertime100WeekendHolidayKm40Min = 0;
+
+export const createServiceReportBodySoloKm40HoursMin = 0;
 
 export const createServiceReportBodyTechnicalAssistanceGuardMin = 0;
 
@@ -101,6 +104,7 @@ export const CreateServiceReportBody = zod.object({
     .number()
     .min(createServiceReportBodyOvertime100WeekendHolidayKm40Min),
   soloKm40: zod.boolean(),
+  soloKm40Hours: zod.number().min(createServiceReportBodySoloKm40HoursMin),
   technicalAssistanceGuard: zod
     .number()
     .min(createServiceReportBodyTechnicalAssistanceGuardMin),
@@ -135,6 +139,7 @@ export const UpdateServiceReportResponse = zod.object({
   overtime100WeekendHoliday: zod.number(),
   overtime100WeekendHolidayKm40: zod.number(),
   soloKm40: zod.boolean(),
+  soloKm40Hours: zod.number(),
   technicalAssistanceGuard: zod.number(),
   fieldActivation: zod.number(),
   total50Hours: zod.number(),
@@ -156,6 +161,7 @@ export const GetServiceReportsSummaryResponse = zod.object({
   total50Hours: zod.number(),
   total100Hours: zod.number(),
   totalKm40Items: zod.number(),
+  totalSoloKm40Hours: zod.number(),
   totalGuardias: zod.number(),
   totalActivaciones: zod.number(),
   latestReportDate: zod.string().nullable(),

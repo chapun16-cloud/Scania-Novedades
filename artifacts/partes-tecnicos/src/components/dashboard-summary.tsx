@@ -54,8 +54,8 @@ export function DashboardSummary({ summary }: { summary: ServiceReportsSummary }
         <CardContent className="p-4 grid grid-cols-3 divide-x">
           <div className="px-4 text-center">
             <div className="flex justify-center mb-1"><FileText className="h-4 w-4 text-muted-foreground" /></div>
-            <div className="text-xl font-bold font-mono">{summary.totalKm40Items}</div>
-            <div className="text-xs text-muted-foreground uppercase">Items Km40</div>
+            <div className="text-xl font-bold font-mono">{summary.totalSoloKm40Hours}h</div>
+            <div className="text-xs text-muted-foreground uppercase">Solo +40km</div>
           </div>
           <div className="px-4 text-center">
             <div className="flex justify-center mb-1"><ShieldAlert className="h-4 w-4 text-muted-foreground" /></div>

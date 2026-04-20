@@ -31,6 +31,8 @@ export interface CreateServiceReportRequest {
   overtime100WeekendHolidayKm40: number;
   soloKm40: boolean;
   /** @minimum 0 */
+  soloKm40Hours: number;
+  /** @minimum 0 */
   technicalAssistanceGuard: number;
   /** @minimum 0 */
   fieldActivation: number;

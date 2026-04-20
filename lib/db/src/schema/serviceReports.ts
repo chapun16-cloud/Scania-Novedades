@@ -43,6 +43,7 @@ export const serviceReportsTable = pgTable("service_reports", {
     .notNull()
     .default(0),
   soloKm40: boolean("solo_km40").notNull().default(false),
+  soloKm40Hours: doublePrecision("solo_km40_hours").notNull().default(0),
   technicalAssistanceGuard: doublePrecision("technical_assistance_guard")
     .notNull()
     .default(0),

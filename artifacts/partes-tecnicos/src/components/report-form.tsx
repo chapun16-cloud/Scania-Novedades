@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateServiceReport, getGetServiceReportsSummaryQueryKey, getListServiceReportsQueryKey } from "@workspace/api-client-react";
@@ -27,6 +26,7 @@ const formSchema = z.object({
   overtime100WeekendHoliday: z.coerce.number().min(0).default(0),
   overtime100WeekendHolidayKm40: z.coerce.number().min(0).default(0),
   soloKm40: z.boolean().default(false),
+  soloKm40Hours: z.coerce.number().min(0).default(0),
   technicalAssistanceGuard: z.coerce.number().min(0).default(0),
   fieldActivation: z.coerce.number().min(0).default(0),
   notes: z.string().optional(),
@@ -55,6 +55,7 @@ export function ReportForm() {
       overtime100WeekendHoliday: 0,
       overtime100WeekendHolidayKm40: 0,
       soloKm40: false,
+      soloKm40Hours: 0,
       technicalAssistanceGuard: 0,
       fieldActivation: 0,
       notes: "",
@@ -62,7 +63,7 @@ export function ReportForm() {
   });
 
   function onSubmit(data: FormValues) {
-    createReport.mutate({ data }, {
+    createReport.mutate({ data: { ...data, soloKm40: data.soloKm40Hours > 0 } }, {
       onSuccess: () => {
         toast({
           title: "Parte registrado",
@@ -228,14 +229,11 @@ export function ReportForm() {
             <h3 className="font-semibold text-secondary">Adicionales</h3>
           </div>
           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FormField control={form.control} name="soloKm40" render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-card">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Solo Km 40</FormLabel>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
+            <FormField control={form.control} name="soloKm40Hours" render={({ field }) => (
+              <FormItem className="rounded-lg border p-4 shadow-sm bg-card">
+                <FormLabel className="text-base block mb-2">Solo +40km</FormLabel>
+                <FormControl><Input type="number" min="0" step="0.5" placeholder="Horas" {...field} className="font-mono" /></FormControl>
+                <p className="text-xs text-muted-foreground mt-2">Cantidad de horas del adicional +40km.</p>
               </FormItem>
             )} />
             <FormField control={form.control} name="technicalAssistanceGuard" render={({ field }) => (
