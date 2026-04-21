@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
   getGetCurrentProfileQueryKey,
-  getGetServiceReportsSummaryQueryKey,
   getListServiceReportsQueryKey,
   useGetCurrentProfile,
-  useGetServiceReportsSummary,
   useListServiceReports,
   useUpdateCurrentProfile,
+  type ServiceReport,
+  type ServiceReportsSummary,
 } from "@workspace/api-client-react";
 import { DashboardSummary } from "@/components/dashboard-summary";
 import { ReportForm } from "@/components/report-form";
@@ -18,11 +18,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
-import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2 } from "lucide-react";
+import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
 
 const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
 
 async function fetchDeletedReports(): Promise<DeletedReport[]> {
   const res = await fetch(`${BASE_API}/api/service-reports/deleted`, { credentials: "include" });
@@ -30,15 +35,90 @@ async function fetchDeletedReports(): Promise<DeletedReport[]> {
   return res.json();
 }
 
+function filterByMonth(reports: ServiceReport[], year: number, month: number): ServiceReport[] {
+  return reports.filter((r) => {
+    const d = new Date(r.workDate + "T00:00:00");
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+}
+
+function computeSummary(reports: ServiceReport[]): ServiceReportsSummary {
+  const s = {
+    totalReports: reports.length,
+    pendingReview: 0,
+    reviewedReports: 0,
+    total50Hours: 0,
+    total100Hours: 0,
+    totalKm40Items: 0,
+    totalSoloKm40Hours: 0,
+    totalGuardias: 0,
+    totalActivaciones: 0,
+    latestReportDate: reports[0]?.workDate ?? null,
+  };
+  for (const r of reports) {
+    if (r.reviewed) s.reviewedReports++; else s.pendingReview++;
+    s.total50Hours += Number(r.total50Hours ?? 0);
+    s.total100Hours += Number(r.total100Hours ?? 0);
+    s.totalSoloKm40Hours += Number(r.soloKm40Hours ?? 0);
+    s.totalGuardias += Number(r.technicalAssistanceGuard ?? 0);
+    s.totalActivaciones += Number(r.fieldActivation ?? 0);
+  }
+  return s;
+}
+
+function MonthSelector({
+  year, month, onChange,
+}: {
+  year: number;
+  month: number;
+  onChange: (year: number, month: number) => void;
+}) {
+  const now = new Date();
+
+  function prev() {
+    if (month === 0) onChange(year - 1, 11);
+    else onChange(year, month - 1);
+  }
+
+  function next() {
+    const nextM = month === 11 ? 0 : month + 1;
+    const nextY = month === 11 ? year + 1 : year;
+    if (nextY > now.getFullYear() || (nextY === now.getFullYear() && nextM > now.getMonth())) return;
+    onChange(nextY, nextM);
+  }
+
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button variant="ghost" size="icon" onClick={prev} className="h-8 w-8">
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+      <div className="min-w-[150px] text-center">
+        <span className="font-semibold text-sm">{MESES[month]} {year}</span>
+        {isCurrentMonth && (
+          <span className="ml-2 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">actual</span>
+        )}
+      </div>
+      <Button variant="ghost" size="icon" onClick={next} disabled={isCurrentMonth} className="h-8 w-8">
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function Home() {
   const { signOut } = useClerk();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: profile, isLoading: isLoadingProfile } = useGetCurrentProfile();
-  const { data: summary, isLoading: isLoadingSummary } = useGetServiceReportsSummary();
-  const { data: reports, isLoading: isLoadingReports } = useListServiceReports();
+  const { data: allReports, isLoading: isLoadingReports } = useListServiceReports();
   const updateProfile = useUpdateCurrentProfile();
   const isSupervisor = profile?.role === "supervisor";
+
+  const now = new Date();
+  const [selYear, setSelYear] = useState(now.getFullYear());
+  const [selMonth, setSelMonth] = useState(now.getMonth());
 
   const { data: deletedReports, isLoading: isLoadingDeleted } = useQuery({
     queryKey: ["service-reports-deleted"],
@@ -49,6 +129,14 @@ export default function Home() {
 
   const [isExportingDeleted, setIsExportingDeleted] = useState(false);
 
+  const filteredReports = allReports ? filterByMonth(allReports, selYear, selMonth) : [];
+  const summary = computeSummary(filteredReports);
+
+  function changeMonth(year: number, month: number) {
+    setSelYear(year);
+    setSelMonth(month);
+  }
+
   function changeRole(role: "technician" | "supervisor") {
     updateProfile.mutate(
       { data: { role } },
@@ -57,7 +145,6 @@ export default function Home() {
           toast({ title: "Perfil actualizado" });
           queryClient.invalidateQueries({ queryKey: getGetCurrentProfileQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListServiceReportsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetServiceReportsSummaryQueryKey() });
         },
         onError: () => {
           toast({ title: "Error", description: "No se pudo cambiar el perfil.", variant: "destructive" });
@@ -145,6 +232,7 @@ export default function Home() {
             </TabsList>
           </div>
 
+          {/* ── Nuevo Parte ── */}
           <TabsContent value="submit" className="mt-0 outline-none">
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
               <div className="p-6 border-b bg-muted/30">
@@ -157,29 +245,43 @@ export default function Home() {
             </div>
           </TabsContent>
 
+          {/* ── Dashboard / Historial ── */}
           <TabsContent value="dashboard" className="mt-0 outline-none space-y-6">
-            {isLoadingSummary ? (
+
+            {/* Month selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card border rounded-xl px-5 py-3 shadow-sm">
+              <div>
+                <p className="text-sm font-semibold text-secondary">Período</p>
+                <p className="text-xs text-muted-foreground">Usá las flechas para navegar entre meses</p>
+              </div>
+              <MonthSelector year={selYear} month={selMonth} onChange={changeMonth} />
+            </div>
+
+            {/* Summary cards — computed from filtered reports */}
+            {isLoadingReports ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
               </div>
-            ) : summary ? (
+            ) : (
               <DashboardSummary summary={summary} />
-            ) : null}
+            )}
 
-            {/* Active reports */}
+            {/* Active reports list */}
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-              <div className="p-6 border-b bg-muted/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="p-5 border-b bg-muted/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold">{isSupervisor ? "Partes del Equipo" : "Mis Partes"}</h2>
+                  <h2 className="text-lg font-semibold">
+                    {isSupervisor ? "Partes del Equipo" : "Mis Partes"} — {MESES[selMonth]} {selYear}
+                  </h2>
                   <p className="text-sm text-muted-foreground">
-                    {isSupervisor ? "Historial y revisión de horas del equipo." : "Historial personal de tus partes cargados."}
+                    {filteredReports.length} parte{filteredReports.length !== 1 ? "s" : ""} en este mes.
                   </p>
                 </div>
-                {isSupervisor && reports && reports.length > 0 && (
+                {isSupervisor && filteredReports.length > 0 && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => exportReportsToExcel(reports)}
+                    onClick={() => exportReportsToExcel(filteredReports, `Novedades_SCANIA_${String(selMonth + 1).padStart(2, "0")}_${selYear}.xlsx`)}
                     className="shrink-0 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-2" />
@@ -192,22 +294,24 @@ export default function Home() {
                   <div className="p-6 space-y-4">
                     {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
                   </div>
-                ) : reports ? (
-                  <ReportsList reports={reports} canReview={isSupervisor} />
-                ) : null}
+                ) : (
+                  <ReportsList reports={filteredReports} canReview={isSupervisor} />
+                )}
               </div>
             </div>
 
             {/* Deleted reports — supervisor only */}
             {isSupervisor && (
               <div className="bg-card border border-destructive/20 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b bg-destructive/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-5 border-b bg-destructive/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex items-center gap-3">
                     <Trash2 className="w-5 h-5 text-destructive/60" />
                     <div>
                       <h2 className="text-lg font-semibold">Partes Borrados</h2>
                       <p className="text-sm text-muted-foreground">
-                        {isLoadingDeleted ? "Cargando..." : `${deletedReports?.length ?? 0} parte${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} borrado${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} en el sistema.`}
+                        {isLoadingDeleted
+                          ? "Cargando..."
+                          : `${deletedReports?.length ?? 0} parte${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} borrado${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} en el sistema.`}
                       </p>
                     </div>
                   </div>
@@ -219,11 +323,9 @@ export default function Home() {
                       disabled={isExportingDeleted}
                       className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10"
                     >
-                      {isExportingDeleted ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                      )}
+                      {isExportingDeleted
+                        ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        : <FileSpreadsheet className="w-4 h-4 mr-2" />}
                       Exportar Borrados
                     </Button>
                   )}
