@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, isNull, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNull, isNotNull } from "drizzle-orm";
 import {
   CreateServiceReportBody,
   GetServiceReportsSummaryResponse,
@@ -67,8 +67,25 @@ function calculateTotals(report: Pick<ServiceReport, (typeof hourFields)[number]
 function serializeReport(report: ServiceReport) {
   return {
     ...report,
-    ownerName: report.ownerName || report.technicianName,
+    ownerName: report.ownerName || report.technicianName || "",
     ownerEmail: report.ownerEmail || "",
+    technicianName: report.technicianName || report.ownerName || "",
+    shiftLabel: report.shiftLabel || "",
+    serviceActivity: report.serviceActivity || "",
+    notes: report.notes || "",
+    overtime50Normal: toNumber(report.overtime50Normal),
+    overtime50NormalKm40: toNumber(report.overtime50NormalKm40),
+    overtime50WeekendHoliday: toNumber(report.overtime50WeekendHoliday),
+    overtime50WeekendHolidayKm40: toNumber(report.overtime50WeekendHolidayKm40),
+    overtime100Normal: toNumber(report.overtime100Normal),
+    overtime100NormalKm40: toNumber(report.overtime100NormalKm40),
+    overtime100WeekendHoliday: toNumber(report.overtime100WeekendHoliday),
+    overtime100WeekendHolidayKm40: toNumber(report.overtime100WeekendHolidayKm40),
+    soloKm40: report.soloKm40 ?? false,
+    soloKm40Hours: toNumber(report.soloKm40Hours),
+    technicalAssistanceGuard: toNumber(report.technicalAssistanceGuard),
+    fieldActivation: toNumber(report.fieldActivation),
+    reviewed: report.reviewed ?? false,
     ...calculateTotals(report),
     createdAt: report.createdAt.toISOString(),
     deletedAt: report.deletedAt ? report.deletedAt.toISOString() : null,
@@ -90,7 +107,12 @@ async function getVisibleReports(req: AppRequest): Promise<ServiceReport[]> {
   return db
     .select()
     .from(serviceReportsTable)
-    .where(eq(serviceReportsTable.ownerUserId, req.userId!))
+    .where(
+      and(
+        eq(serviceReportsTable.ownerUserId, req.userId!),
+        isNull(serviceReportsTable.deletedAt),
+      )
+    )
     .orderBy(desc(serviceReportsTable.createdAt));
 }
 
