@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import scaniaLionWatermark from "@/assets/scania-lion-watermark.png";
 import {
   ClerkProvider,
   SignIn,
@@ -294,9 +295,25 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: `url(${scaniaLionWatermark})`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center center",
+          backgroundSize: "60%",
+          opacity: 0.08,
+          pointerEvents: "none",
+          zIndex: 9999,
+        }}
+      />
+    </>
   );
 }
 
