@@ -56,7 +56,7 @@ export const ListServiceReportsResponseItem = zod.object({
   ownerName: zod.string(),
   ownerEmail: zod.string(),
   technicianName: zod.string(),
-  workDate: zod.coerce.date(),
+  workDate: zod.string(),
   shiftLabel: zod.string(),
   serviceActivity: zod.string(),
   overtime50Normal: zod.number(),

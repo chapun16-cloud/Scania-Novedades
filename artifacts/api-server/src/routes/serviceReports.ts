@@ -67,6 +67,7 @@ function calculateTotals(report: Pick<ServiceReport, (typeof hourFields)[number]
 function serializeReport(report: ServiceReport) {
   return {
     ...report,
+    workDate: String(report.workDate).substring(0, 10),
     ownerName: report.ownerName || report.technicianName || "",
     ownerEmail: report.ownerEmail || "",
     technicianName: report.technicianName || report.ownerName || "",
