@@ -28,6 +28,7 @@ const APPROVED_NAMES_RAW = [
   "Gonzalo Perez",
   "Guillermo Pipet",
   "Nahuel Ueki",
+  "Damian Ferrara",
 ];
 
 function normalize(s: string): string {
@@ -39,6 +40,14 @@ function normalize(s: string): string {
 }
 
 const APPROVED_NAMES = APPROVED_NAMES_RAW.map(normalize);
+
+// Only these users may have the "supervisor" role
+const SUPERVISOR_NAMES_RAW = [
+  "Daniel Castaneda",
+  "Tatiana Leal",
+  "Damian Ferrara",
+];
+const SUPERVISOR_NAMES = SUPERVISOR_NAMES_RAW.map(normalize);
 
 function isApprovedName(firstName: string, lastName: string): boolean {
   const enteredWords = [firstName, lastName]
@@ -192,6 +201,16 @@ router.patch("/profile", requireAuth, async (req: AppRequest, res): Promise<void
     req.log.warn({ errors: parsed.error.message }, "Invalid profile update body");
     res.status(400).json({ error: parsed.error.message });
     return;
+  }
+
+  // Enforce: only whitelisted names can hold the supervisor role
+  if (parsed.data.role === "supervisor") {
+    const nameNorm = normalize(profile.displayName);
+    const allowed = SUPERVISOR_NAMES.some((sn) => nameNorm.includes(sn) || sn.includes(nameNorm));
+    if (!allowed) {
+      res.status(403).json({ error: "No tenés permisos para asumir el rol de supervisor." });
+      return;
+    }
   }
 
   const [updated] = await db
