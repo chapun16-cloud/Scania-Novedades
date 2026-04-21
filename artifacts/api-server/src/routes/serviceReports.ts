@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, isNull, isNotNull } from "drizzle-orm";
 import {
   CreateServiceReportBody,
   GetServiceReportsSummaryResponse,
@@ -11,6 +11,8 @@ import {
 } from "@workspace/api-zod";
 import { db, serviceReportsTable, type ServiceReport } from "@workspace/db";
 import { getOrCreateProfile, requireAuth, type AppRequest } from "./profiles";
+import { clerkClient } from "@clerk/express";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -69,6 +71,8 @@ function serializeReport(report: ServiceReport) {
     ownerEmail: report.ownerEmail || "",
     ...calculateTotals(report),
     createdAt: report.createdAt.toISOString(),
+    deletedAt: report.deletedAt ? report.deletedAt.toISOString() : null,
+    deletedBy: report.deletedBy ?? null,
   };
 }
 
@@ -76,7 +80,11 @@ async function getVisibleReports(req: AppRequest): Promise<ServiceReport[]> {
   const profile = await getOrCreateProfile(req);
 
   if (profile.role === "supervisor") {
-    return db.select().from(serviceReportsTable).orderBy(desc(serviceReportsTable.createdAt));
+    return db
+      .select()
+      .from(serviceReportsTable)
+      .where(isNull(serviceReportsTable.deletedAt))
+      .orderBy(desc(serviceReportsTable.createdAt));
   }
 
   return db
@@ -181,6 +189,85 @@ router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): 
   }
 
   res.json(UpdateServiceReportResponse.parse(serializeReport(report)));
+});
+
+// ─── DELETE (soft-delete) ─────────────────────────────────────────────────────
+const DeleteServiceReportBody = z.object({ password: z.string().min(1) });
+
+router.delete("/service-reports/:id", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  let profile;
+  try { profile = await getOrCreateProfile(req); }
+  catch (err: unknown) {
+    const e = err as { statusCode?: number; message?: string };
+    if (e.statusCode === 403) { res.status(403).json({ error: e.message }); return; }
+    throw err;
+  }
+  if (profile.role !== "supervisor") {
+    res.status(403).json({ error: "Solo el supervisor puede borrar partes" });
+    return;
+  }
+
+  const idRaw = Number(req.params.id);
+  if (!idRaw || isNaN(idRaw)) { res.status(400).json({ error: "ID inválido" }); return; }
+
+  const parsed = DeleteServiceReportBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Contraseña requerida" }); return; }
+
+  // Verify user's Clerk password
+  try {
+    const result = await clerkClient.users.verifyPassword({
+      userId: req.userId!,
+      password: parsed.data.password,
+    });
+    if (!result.verified) {
+      res.status(401).json({ error: "Contraseña incorrecta" });
+      return;
+    }
+  } catch {
+    res.status(401).json({ error: "Contraseña incorrecta" });
+    return;
+  }
+
+  // Only pending (not reviewed) reports can be deleted
+  const [existing] = await db
+    .select()
+    .from(serviceReportsTable)
+    .where(eq(serviceReportsTable.id, idRaw))
+    .limit(1);
+
+  if (!existing) { res.status(404).json({ error: "Parte no encontrado" }); return; }
+  if (existing.deletedAt) { res.status(409).json({ error: "El parte ya fue borrado" }); return; }
+  if (existing.reviewed) { res.status(409).json({ error: "No se puede borrar un parte ya aprobado" }); return; }
+
+  await db
+    .update(serviceReportsTable)
+    .set({ deletedAt: new Date(), deletedBy: profile.displayName })
+    .where(eq(serviceReportsTable.id, idRaw));
+
+  res.status(200).json({ ok: true });
+});
+
+// ─── GET deleted reports (supervisor only) ────────────────────────────────────
+router.get("/service-reports/deleted", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  let profile;
+  try { profile = await getOrCreateProfile(req); }
+  catch (err: unknown) {
+    const e = err as { statusCode?: number; message?: string };
+    if (e.statusCode === 403) { res.status(403).json({ error: e.message }); return; }
+    throw err;
+  }
+  if (profile.role !== "supervisor") {
+    res.status(403).json({ error: "Solo el supervisor puede ver los partes borrados" });
+    return;
+  }
+
+  const deleted = await db
+    .select()
+    .from(serviceReportsTable)
+    .where(isNotNull(serviceReportsTable.deletedAt))
+    .orderBy(desc(serviceReportsTable.deletedAt));
+
+  res.json(deleted.map(serializeReport));
 });
 
 router.get("/service-reports/summary", requireAuth, async (req: AppRequest, res): Promise<void> => {

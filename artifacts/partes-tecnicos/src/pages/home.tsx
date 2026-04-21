@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   getGetCurrentProfileQueryKey,
   getGetServiceReportsSummaryQueryKey,
@@ -15,10 +16,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
-import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet } from "lucide-react";
-import { exportReportsToExcel } from "@/lib/exportExcel";
+import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2 } from "lucide-react";
+import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
+
+const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+async function fetchDeletedReports(): Promise<DeletedReport[]> {
+  const res = await fetch(`${BASE_API}/api/service-reports/deleted`, { credentials: "include" });
+  if (!res.ok) throw new Error("No se pudo cargar el historial de borrados");
+  return res.json();
+}
 
 export default function Home() {
   const { signOut } = useClerk();
@@ -29,6 +39,15 @@ export default function Home() {
   const { data: reports, isLoading: isLoadingReports } = useListServiceReports();
   const updateProfile = useUpdateCurrentProfile();
   const isSupervisor = profile?.role === "supervisor";
+
+  const { data: deletedReports, isLoading: isLoadingDeleted } = useQuery({
+    queryKey: ["service-reports-deleted"],
+    queryFn: fetchDeletedReports,
+    enabled: isSupervisor,
+    staleTime: 30_000,
+  });
+
+  const [isExportingDeleted, setIsExportingDeleted] = useState(false);
 
   function changeRole(role: "technician" | "supervisor") {
     updateProfile.mutate(
@@ -45,6 +64,22 @@ export default function Home() {
         },
       },
     );
+  }
+
+  async function handleExportDeleted() {
+    setIsExportingDeleted(true);
+    try {
+      const data = await fetchDeletedReports();
+      if (!data || data.length === 0) {
+        toast({ title: "Sin datos", description: "No hay partes borrados para exportar." });
+        return;
+      }
+      exportDeletedReportsToExcel(data);
+    } catch {
+      toast({ title: "Error", description: "No se pudo exportar.", variant: "destructive" });
+    } finally {
+      setIsExportingDeleted(false);
+    }
   }
 
   if (isLoadingProfile || !profile) {
@@ -131,6 +166,7 @@ export default function Home() {
               <DashboardSummary summary={summary} />
             ) : null}
 
+            {/* Active reports */}
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
               <div className="p-6 border-b bg-muted/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -161,11 +197,70 @@ export default function Home() {
                 ) : null}
               </div>
             </div>
+
+            {/* Deleted reports — supervisor only */}
+            {isSupervisor && (
+              <div className="bg-card border border-destructive/20 rounded-xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b bg-destructive/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <Trash2 className="w-5 h-5 text-destructive/60" />
+                    <div>
+                      <h2 className="text-lg font-semibold">Partes Borrados</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {isLoadingDeleted ? "Cargando..." : `${deletedReports?.length ?? 0} parte${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} borrado${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} en el sistema.`}
+                      </p>
+                    </div>
+                  </div>
+                  {(deletedReports?.length ?? 0) > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportDeleted}
+                      disabled={isExportingDeleted}
+                      className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10"
+                    >
+                      {isExportingDeleted ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      )}
+                      Exportar Borrados
+                    </Button>
+                  )}
+                </div>
+
+                {isLoadingDeleted ? (
+                  <div className="p-6 space-y-2">
+                    {[1, 2].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+                  </div>
+                ) : deletedReports && deletedReports.length > 0 ? (
+                  <div className="divide-y">
+                    {deletedReports.map((r) => (
+                      <div key={r.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-2 text-sm opacity-70">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold">{r.ownerName || r.technicianName}</span>
+                          <span className="mx-2 text-muted-foreground">·</span>
+                          <span className="font-mono text-xs">{r.workDate}</span>
+                          <span className="mx-2 text-muted-foreground">·</span>
+                          <span className="truncate text-muted-foreground">{r.serviceActivity}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground shrink-0">
+                          Borrado por <strong>{r.deletedBy || "supervisor"}</strong>
+                          {r.deletedAt && <> · {new Date(r.deletedAt).toLocaleDateString("es-AR")}</>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-sm text-muted-foreground">
+                    No hay partes borrados.
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>
     </div>
   );
 }
-
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");

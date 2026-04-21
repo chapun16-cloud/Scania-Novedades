@@ -54,6 +54,8 @@ export const serviceReportsTable = pgTable("service_reports", {
   reviewed: boolean("reviewed").notNull().default(false),
   notes: text("notes").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  deletedBy: text("deleted_by"),
 });
 
 export const insertServiceReportSchema = createInsertSchema(

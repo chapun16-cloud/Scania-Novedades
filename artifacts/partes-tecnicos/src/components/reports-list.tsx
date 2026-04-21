@@ -3,11 +3,12 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { DeleteReportDialog } from "@/components/delete-report-dialog";
 
 export function ReportsList({ reports, canReview = false }: { reports: ServiceReport[]; canReview?: boolean }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -23,9 +24,9 @@ export function ReportsList({ reports, canReview = false }: { reports: ServiceRe
   return (
     <div className="divide-y">
       {reports.map(report => (
-        <ReportRow 
-          key={report.id} 
-          report={report} 
+        <ReportRow
+          key={report.id}
+          report={report}
           canReview={canReview}
           isExpanded={expandedId === report.id}
           onToggle={() => setExpandedId(expandedId === report.id ? null : report.id)}
@@ -40,6 +41,7 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
   const updateReport = useUpdateServiceReport();
   const { toast } = useToast();
   const [notes, setNotes] = useState(report.notes || "");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleReview = () => {
     updateReport.mutate({ id: report.id, data: { reviewed: true } }, {
@@ -60,11 +62,17 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
     });
   };
 
+  const handleDeleted = () => {
+    toast({ title: "Parte borrado", description: "El parte quedó registrado en el log de borrados." });
+    queryClient.invalidateQueries({ queryKey: getListServiceReportsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetServiceReportsSummaryQueryKey() });
+  };
+
   const dateFormatted = format(new Date(report.workDate), "dd MMM yyyy", { locale: es });
 
   return (
     <div className={`transition-colors ${report.reviewed ? 'bg-background' : 'bg-primary/5'} hover:bg-muted/30`}>
-      <div 
+      <div
         className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer"
         onClick={onToggle}
       >
@@ -89,7 +97,7 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
           </div>
         </div>
 
-        <div className="flex items-center gap-6 sm:justify-end shrink-0">
+        <div className="flex items-center gap-4 sm:justify-end shrink-0">
           <div className="text-right">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Total Horas</div>
             <div className="font-mono font-bold flex gap-3">
@@ -98,6 +106,20 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
               {report.total50Hours === 0 && report.total100Hours === 0 && <span className="text-muted-foreground">0h</span>}
             </div>
           </div>
+
+          {/* Delete button — supervisor only, pending only */}
+          {canReview && !report.reviewed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 shrink-0"
+              onClick={(e) => { e.stopPropagation(); setDeleteOpen(true); }}
+              title="Borrar parte"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+
           <div className="text-muted-foreground">
             {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </div>
@@ -107,11 +129,11 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
       {isExpanded && (
         <div className="p-4 sm:p-6 bg-muted/20 border-t border-dashed">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             {/* Detalles de horas */}
             <div className="md:col-span-2 space-y-4">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Desglose de Horas Extras</h4>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="border rounded-lg p-3 bg-card shadow-sm">
                   <div className="text-xs font-bold text-primary mb-2 flex items-center gap-1">
@@ -160,32 +182,32 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
             {/* Revisión y notas */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{canReview ? "Revisión" : "Estado"}</h4>
-              
+
               <div className="space-y-3">
-                <Textarea 
-                  value={notes} 
-                  onChange={(e) => setNotes(e.target.value)} 
-                  placeholder="Notas de revisión..." 
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Notas de revisión..."
                   readOnly={!canReview}
                   className="h-24 resize-none bg-card text-sm"
                 />
-                
+
                 {canReview ? (
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleSaveNotes}
                     disabled={updateReport.isPending || notes === report.notes}
                     className="flex-1"
                   >
                     Guardar Notas
                   </Button>
-                  
+
                   {!report.reviewed && (
-                    <Button 
-                      variant="default" 
-                      size="sm" 
+                    <Button
+                      variant="default"
+                      size="sm"
                       onClick={handleReview}
                       disabled={updateReport.isPending}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -206,6 +228,15 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
           </div>
         </div>
       )}
+
+      <DeleteReportDialog
+        reportId={report.id}
+        technicianName={report.technicianName}
+        workDate={dateFormatted}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={handleDeleted}
+      />
     </div>
   );
 }

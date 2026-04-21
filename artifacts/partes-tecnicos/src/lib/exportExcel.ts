@@ -1,6 +1,8 @@
 import * as XLSX from "xlsx";
 import type { ServiceReport } from "@workspace/api-client-react";
 
+export type DeletedReport = ServiceReport & { deletedAt?: string | null; deletedBy?: string | null };
+
 interface TechnicianTotals {
   apellido: string;
   nombre: string;
@@ -244,6 +246,70 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
   const date = new Date();
   const period = `${String(date.getMonth() + 1).padStart(2, "0")}_${date.getFullYear()}`;
   const outputFilename = filename || `Novedades_SCANIA_${period}.xlsx`;
+
+  XLSX.writeFile(wb, outputFilename);
+}
+
+export function exportDeletedReportsToExcel(reports: DeletedReport[], filename?: string) {
+  const headers = [
+    "ID Parte",
+    "Técnico",
+    "Fecha de Trabajo",
+    "Turno",
+    "Actividad",
+    "Guardias",
+    "Activaciones",
+    "HE 50% Normal",
+    "HE 50% Fin Sem/Fer",
+    "HE 50% Normal Km40",
+    "HE 50% Fin Sem/Fer Km40",
+    "HE 100% Normal",
+    "HE 100% Fin Sem/Fer",
+    "HE 100% Normal Km40",
+    "HE 100% Fin Sem/Fer Km40",
+    "Solo Km40 Horas",
+    "Notas",
+    "Borrado por",
+    "Fecha de Borrado",
+  ];
+
+  const rows = reports.map((r) => [
+    r.id,
+    r.ownerName || r.technicianName,
+    r.workDate,
+    r.shiftLabel || "",
+    r.serviceActivity,
+    r.technicalAssistanceGuard || "",
+    r.fieldActivation || "",
+    r.overtime50Normal || "",
+    r.overtime50WeekendHoliday || "",
+    r.overtime50NormalKm40 || "",
+    r.overtime50WeekendHolidayKm40 || "",
+    r.overtime100Normal || "",
+    r.overtime100WeekendHoliday || "",
+    r.overtime100NormalKm40 || "",
+    r.overtime100WeekendHolidayKm40 || "",
+    r.soloKm40Hours || "",
+    r.notes || "",
+    r.deletedBy || "",
+    r.deletedAt ? new Date(r.deletedAt).toLocaleString("es-AR") : "",
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  ws["!cols"] = [
+    { wch: 8 }, { wch: 22 }, { wch: 14 }, { wch: 10 }, { wch: 30 },
+    { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
+    { wch: 16 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 16 },
+    { wch: 12 }, { wch: 30 }, { wch: 20 }, { wch: 20 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "BORRADOS");
+
+  const date = new Date();
+  const period = `${String(date.getMonth() + 1).padStart(2, "0")}_${date.getFullYear()}`;
+  const outputFilename = filename || `Partes_Borrados_SCANIA_${period}.xlsx`;
 
   XLSX.writeFile(wb, outputFilename);
 }
