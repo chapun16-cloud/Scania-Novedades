@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "lEkvEnSf-GsTHI_kTdOqK"
+uri = "file://scania_qr.png"
+type = "image"
+title = "QR Code — SCANIA App"
