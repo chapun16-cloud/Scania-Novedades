@@ -123,10 +123,10 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
       "Lic sin Goce de Sueldo", "Ausencias Injustificadas", "Horas",
       "N° OT, Ausencias por Vacaciones, días flex, otras ausencias",
     ],
-    // Row 6 (info row with codes)
+    // Row 6 (official codes per column)
     [
       "", "", "", "",
-      "Asistencia Técnica (52,01)", "Activación SOS (52,04)",
+      "52,01", "52,04",
       "", "", "", "", "", "", "", "", "", "", "", "", "",
       "N° OT, Ausencias por Vacaciones, días flex, otras ausencias",
     ],
