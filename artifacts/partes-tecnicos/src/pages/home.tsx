@@ -135,6 +135,90 @@ function TechnicianGroup({
   );
 }
 
+function DeletedReportsSection({
+  deletedReports,
+  isLoading,
+  onExport,
+  isExporting,
+}: {
+  deletedReports: DeletedReport[];
+  isLoading: boolean;
+  onExport: () => void;
+  isExporting: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const count = deletedReports.length;
+
+  return (
+    <div className="border border-destructive/20 rounded-xl shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-4 px-5 py-4 bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
+      >
+        <Trash2 className="w-5 h-5 text-destructive/50 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-base leading-tight">Partes Borrados</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isLoading
+              ? "Cargando..."
+              : `${count} parte${count !== 1 ? "s" : ""} borrado${count !== 1 ? "s" : ""} en el sistema`}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {count > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onExport(); }}
+              disabled={isExporting}
+              className="border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              {isExporting
+                ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                : <FileSpreadsheet className="w-4 h-4 mr-2" />}
+              Exportar
+            </Button>
+          )}
+          {open ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+        </div>
+      </button>
+
+      {open && (
+        <div className="bg-card">
+          {isLoading ? (
+            <div className="p-6 space-y-2">
+              {[1, 2].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+            </div>
+          ) : count > 0 ? (
+            <div className="divide-y">
+              {deletedReports.map((r) => (
+                <div key={r.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-2 text-sm opacity-70">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold">{r.ownerName || r.technicianName}</span>
+                    <span className="mx-2 text-muted-foreground">·</span>
+                    <span className="font-mono text-xs">{r.workDate}</span>
+                    <span className="mx-2 text-muted-foreground">·</span>
+                    <span className="truncate text-muted-foreground">{r.serviceActivity}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground shrink-0">
+                    Borrado por <strong>{r.deletedBy || "supervisor"}</strong>
+                    {r.deletedAt && <> · {new Date(r.deletedAt).toLocaleDateString("es-AR")}</>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              No hay partes borrados.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MonthSelector({
   year, month, onChange,
 }: {
@@ -392,65 +476,7 @@ export default function Home() {
             </div>
 
             {/* Deleted reports — supervisor only */}
-            {isSupervisor && (
-              <div className="bg-card border border-destructive/20 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-5 border-b bg-destructive/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <Trash2 className="w-5 h-5 text-destructive/60" />
-                    <div>
-                      <h2 className="text-lg font-semibold">Partes Borrados</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {isLoadingDeleted
-                          ? "Cargando..."
-                          : `${deletedReports?.length ?? 0} parte${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} borrado${(deletedReports?.length ?? 0) !== 1 ? "s" : ""} en el sistema.`}
-                      </p>
-                    </div>
-                  </div>
-                  {(deletedReports?.length ?? 0) > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportDeleted}
-                      disabled={isExportingDeleted}
-                      className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10"
-                    >
-                      {isExportingDeleted
-                        ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        : <FileSpreadsheet className="w-4 h-4 mr-2" />}
-                      Exportar Borrados
-                    </Button>
-                  )}
-                </div>
-
-                {isLoadingDeleted ? (
-                  <div className="p-6 space-y-2">
-                    {[1, 2].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
-                  </div>
-                ) : deletedReports && deletedReports.length > 0 ? (
-                  <div className="divide-y">
-                    {deletedReports.map((r) => (
-                      <div key={r.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-2 text-sm opacity-70">
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold">{r.ownerName || r.technicianName}</span>
-                          <span className="mx-2 text-muted-foreground">·</span>
-                          <span className="font-mono text-xs">{r.workDate}</span>
-                          <span className="mx-2 text-muted-foreground">·</span>
-                          <span className="truncate text-muted-foreground">{r.serviceActivity}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground shrink-0">
-                          Borrado por <strong>{r.deletedBy || "supervisor"}</strong>
-                          {r.deletedAt && <> · {new Date(r.deletedAt).toLocaleDateString("es-AR")}</>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center text-sm text-muted-foreground">
-                    No hay partes borrados.
-                  </div>
-                )}
-              </div>
-            )}
+            {isSupervisor && <DeletedReportsSection deletedReports={deletedReports ?? []} isLoading={isLoadingDeleted} onExport={handleExportDeleted} isExporting={isExportingDeleted} />}
           </TabsContent>
         </Tabs>
       </main>
