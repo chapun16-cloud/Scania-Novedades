@@ -5,6 +5,7 @@ import {
   GetCurrentProfileResponse,
   UpdateCurrentProfileBody,
   UpdateCurrentProfileResponse,
+  ListUsersResponse,
 } from "@workspace/api-zod";
 import { db, userProfilesTable, type UserProfile } from "@workspace/db";
 import { z } from "zod";
@@ -100,6 +101,7 @@ export function serializeProfile(profile: UserProfile) {
   return {
     ...profile,
     role: profile.role === "supervisor" ? "supervisor" : "technician",
+    defaultShift: profile.defaultShift || "Tarde/Cierre",
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
   };
@@ -221,6 +223,48 @@ router.patch("/profile", requireAuth, async (req: AppRequest, res): Promise<void
     .returning();
 
   res.json(UpdateCurrentProfileResponse.parse(serializeProfile(updated)));
+});
+
+// ─── GET /users (supervisor only) ────────────────────────────────────────────
+router.get("/users", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  const profile = await getExistingProfile(req);
+  if (!profile || profile.role !== "supervisor") {
+    res.status(403).json({ error: "Solo el supervisor puede ver la lista de usuarios" });
+    return;
+  }
+  const users = await db.select().from(userProfilesTable);
+  res.json(ListUsersResponse.parse(users.map(serializeProfile)));
+});
+
+// ─── PATCH /users/:userId/shift (supervisor only) ────────────────────────────
+const PatchShiftBody = z.object({ defaultShift: z.string().min(1) });
+
+router.patch("/users/:userId/shift", requireAuth, async (req: AppRequest, res): Promise<void> => {
+  const profile = await getExistingProfile(req);
+  if (!profile || profile.role !== "supervisor") {
+    res.status(403).json({ error: "Solo el supervisor puede cambiar el turno de un técnico" });
+    return;
+  }
+
+  const { userId } = req.params;
+  const parsed = PatchShiftBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Turno inválido" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(userProfilesTable)
+    .set({ defaultShift: parsed.data.defaultShift, updatedAt: new Date() })
+    .where(eq(userProfilesTable.userId, userId))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "Usuario no encontrado" });
+    return;
+  }
+
+  res.json({ ok: true, defaultShift: updated.defaultShift });
 });
 
 export default router;

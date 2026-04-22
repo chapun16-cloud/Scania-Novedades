@@ -16,6 +16,7 @@ export const userProfilesTable = pgTable(
     displayName: text("display_name").notNull().default(""),
     email: text("email").notNull().default(""),
     role: text("role").notNull().default("technician"),
+    defaultShift: text("default_shift").notNull().default("Tarde/Cierre"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

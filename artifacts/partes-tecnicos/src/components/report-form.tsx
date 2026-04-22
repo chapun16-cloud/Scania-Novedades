@@ -35,7 +35,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function ReportForm({ defaultTechnicianName = "" }: { defaultTechnicianName?: string }) {
+export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/Cierre" }: { defaultTechnicianName?: string; defaultShift?: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createReport = useCreateServiceReport();
@@ -45,7 +45,7 @@ export function ReportForm({ defaultTechnicianName = "" }: { defaultTechnicianNa
     defaultValues: {
       technicianName: defaultTechnicianName,
       workDate: new Date().toISOString().split('T')[0],
-      shiftLabel: "Mañana",
+      shiftLabel: defaultShift,
       serviceActivity: "",
       overtime50Normal: 0,
       overtime50NormalKm40: 0,
@@ -153,7 +153,7 @@ export function ReportForm({ defaultTechnicianName = "" }: { defaultTechnicianNa
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="Mañana">Mañana</SelectItem>
-                    <SelectItem value="Tarde">Tarde</SelectItem>
+                    <SelectItem value="Tarde/Cierre">Tarde/Cierre</SelectItem>
                     <SelectItem value="Noche">Noche</SelectItem>
                   </SelectContent>
                 </Select>

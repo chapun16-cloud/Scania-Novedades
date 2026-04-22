@@ -24,6 +24,7 @@ export const GetCurrentProfileResponse = zod.object({
   displayName: zod.string(),
   email: zod.string(),
   role: zod.enum(["technician", "supervisor"]),
+  defaultShift: zod.string().default("Tarde/Cierre"),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -35,6 +36,7 @@ export const GetCurrentProfileResponse = zod.object({
 export const UpdateCurrentProfileBody = zod.object({
   displayName: zod.string().min(1).optional(),
   role: zod.enum(["technician", "supervisor"]).optional(),
+  defaultShift: zod.string().optional(),
 });
 
 export const UpdateCurrentProfileResponse = zod.object({
@@ -43,9 +45,20 @@ export const UpdateCurrentProfileResponse = zod.object({
   displayName: zod.string(),
   email: zod.string(),
   role: zod.enum(["technician", "supervisor"]),
+  defaultShift: zod.string().default("Tarde/Cierre"),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+export const ListUsersResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  displayName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["technician", "supervisor"]),
+  defaultShift: zod.string().default("Tarde/Cierre"),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
 /**
  * @summary List service reports visible to the current user

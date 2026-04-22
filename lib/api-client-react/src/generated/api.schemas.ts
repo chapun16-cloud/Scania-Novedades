@@ -22,6 +22,7 @@ export interface UserProfile {
   displayName: string;
   email: string;
   role: UserRole;
+  defaultShift: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +31,7 @@ export interface UpdateUserProfileRequest {
   /** @minLength 1 */
   displayName?: string;
   role?: UserRole;
+  defaultShift?: string;
 }
 
 export interface ServiceReport {

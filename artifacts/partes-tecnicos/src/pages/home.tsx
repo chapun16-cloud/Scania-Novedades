@@ -21,6 +21,8 @@ import { useClerk } from "@clerk/react";
 import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp } from "lucide-react";
 import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
 
+const SHIFT_OPTIONS = ["Mañana", "Tarde/Cierre", "Noche"];
+
 const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -83,17 +85,30 @@ function TechnicianGroup({
   reports,
   canReview,
   defaultOpen,
+  defaultShift,
+  userId,
+  onShiftChange,
 }: {
   name: string;
   reports: ServiceReport[];
   canReview: boolean;
   defaultOpen: boolean;
+  defaultShift?: string;
+  userId?: string;
+  onShiftChange?: (userId: string, shift: string) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   const total50 = reports.reduce((s, r) => s + Number(r.total50Hours ?? 0), 0);
   const total100 = reports.reduce((s, r) => s + Number(r.total100Hours ?? 0), 0);
   const pending = reports.filter((r) => !r.reviewed).length;
+
+  const shiftColors: Record<string, string> = {
+    "Mañana": "bg-amber-100 text-amber-800 border-amber-200",
+    "Tarde/Cierre": "bg-indigo-100 text-indigo-800 border-indigo-200",
+    "Noche": "bg-slate-100 text-slate-700 border-slate-200",
+  };
+  const shiftColor = defaultShift ? (shiftColors[defaultShift] ?? "bg-muted text-muted-foreground") : "bg-muted text-muted-foreground";
 
   return (
     <div className="border rounded-xl overflow-hidden shadow-sm">
@@ -106,7 +121,14 @@ function TechnicianGroup({
           <User className="w-4 h-4 text-secondary-foreground" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-base leading-tight truncate">{name}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-bold text-base leading-tight truncate">{name}</p>
+            {defaultShift && (
+              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${shiftColor}`}>
+                {defaultShift}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {reports.length} parte{reports.length !== 1 ? "s" : ""}
             {pending > 0 && (
@@ -128,6 +150,24 @@ function TechnicianGroup({
       </button>
       {open && (
         <div className="bg-card">
+          {userId && onShiftChange && (
+            <div className="px-5 py-3 border-b bg-muted/20 flex items-center gap-3">
+              <span className="text-xs text-muted-foreground font-medium">Turno asignado:</span>
+              <Select
+                value={defaultShift ?? "Tarde/Cierre"}
+                onValueChange={(v) => onShiftChange(userId, v)}
+              >
+                <SelectTrigger className="h-7 w-[150px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SHIFT_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <ReportsList reports={reports} canReview={canReview} />
         </div>
       )}
@@ -260,6 +300,12 @@ function MonthSelector({
   );
 }
 
+async function fetchUsers() {
+  const res = await fetch(`${BASE_API}/api/users`, { credentials: "include" });
+  if (!res.ok) throw new Error("No se pudo cargar la lista de usuarios");
+  return res.json() as Promise<{ userId: string; displayName: string; defaultShift: string }[]>;
+}
+
 export default function Home() {
   const { signOut } = useClerk();
   const { toast } = useToast();
@@ -279,6 +325,29 @@ export default function Home() {
     enabled: isSupervisor,
     staleTime: 30_000,
   });
+
+  const { data: users } = useQuery({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+    enabled: isSupervisor,
+    staleTime: 60_000,
+  });
+
+  async function handleShiftChange(userId: string, shift: string) {
+    try {
+      const res = await fetch(`${BASE_API}/api/users/${userId}/shift`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ defaultShift: shift }),
+      });
+      if (!res.ok) throw new Error();
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "Turno actualizado", description: `Turno asignado: ${shift}` });
+    } catch {
+      toast({ title: "Error", description: "No se pudo cambiar el turno.", variant: "destructive" });
+    }
+  }
 
   const [isExportingDeleted, setIsExportingDeleted] = useState(false);
 
@@ -393,7 +462,7 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">Complete los datos del turno y horas extras.</p>
               </div>
               <div className="p-6">
-                <ReportForm defaultTechnicianName={profile.displayName} />
+                <ReportForm defaultTechnicianName={profile.displayName} defaultShift={profile.defaultShift ?? "Tarde/Cierre"} />
               </div>
             </div>
           </TabsContent>
@@ -458,15 +527,22 @@ export default function Home() {
                 </div>
               ) : isSupervisor ? (
                 <div className="space-y-3">
-                  {groupByTechnician(filteredReports).map((group, i) => (
-                    <TechnicianGroup
-                      key={group.name}
-                      name={group.name}
-                      reports={group.reports}
-                      canReview={true}
-                      defaultOpen={i === 0}
-                    />
-                  ))}
+                  {groupByTechnician(filteredReports).map((group, i) => {
+                    const ownerUserId = group.reports[0]?.ownerUserId;
+                    const userProfile = users?.find((u) => u.userId === ownerUserId);
+                    return (
+                      <TechnicianGroup
+                        key={group.name}
+                        name={group.name}
+                        reports={group.reports}
+                        canReview={true}
+                        defaultOpen={i === 0}
+                        defaultShift={userProfile?.defaultShift ?? "Tarde/Cierre"}
+                        userId={ownerUserId}
+                        onShiftChange={handleShiftChange}
+                      />
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
