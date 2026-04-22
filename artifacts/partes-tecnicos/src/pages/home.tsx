@@ -358,6 +358,15 @@ export default function Home() {
   const filteredReports = allReports ? filterByMonth(allReports, selYear, selMonth) : [];
   const summary = computeSummary(filteredReports);
 
+  const technicianHoursSummary: Record<string, { total50: number; total100: number }> = {};
+  for (const r of filteredReports) {
+    const uid = r.ownerUserId;
+    if (!uid) continue;
+    if (!technicianHoursSummary[uid]) technicianHoursSummary[uid] = { total50: 0, total100: 0 };
+    technicianHoursSummary[uid].total50 += Number(r.total50Hours ?? 0);
+    technicianHoursSummary[uid].total100 += Number(r.total100Hours ?? 0);
+  }
+
   function changeMonth(year: number, month: number) {
     setSelYear(year);
     setSelMonth(month);
@@ -561,6 +570,7 @@ export default function Home() {
                 users={technicians}
                 isLoading={isLoadingUsers}
                 onShiftChange={handleShiftChange}
+                hoursSummary={technicianHoursSummary}
               />
             )}
 
