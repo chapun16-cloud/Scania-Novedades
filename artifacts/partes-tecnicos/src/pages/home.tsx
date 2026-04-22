@@ -19,7 +19,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
-import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
 import scaniaLionWatermark from "@/assets/scania-lion-watermark.png";
 
@@ -354,9 +364,27 @@ export default function Home() {
   }
 
   const [isExportingDeleted, setIsExportingDeleted] = useState(false);
+  const [showExportConfirm, setShowExportConfirm] = useState(false);
 
   const filteredReports = allReports ? filterByMonth(allReports, selYear, selMonth) : [];
+  const reviewedReports = filteredReports.filter((r) => r.reviewed);
+  const pendingCount = filteredReports.length - reviewedReports.length;
   const summary = computeSummary(filteredReports);
+
+  function handleExportClick() {
+    if (pendingCount > 0) {
+      setShowExportConfirm(true);
+    } else {
+      doExport();
+    }
+  }
+
+  function doExport() {
+    exportReportsToExcel(
+      reviewedReports,
+      `Novedades_SCANIA_${String(selMonth + 1).padStart(2, "0")}_${selYear}.xlsx`,
+    );
+  }
 
   const technicianHoursSummary: Record<string, { total50: number; total100: number }> = {};
   for (const r of filteredReports) {
@@ -517,15 +545,24 @@ export default function Home() {
                     </p>
                   </div>
                   {isSupervisor && filteredReports.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => exportReportsToExcel(filteredReports, `Novedades_SCANIA_${String(selMonth + 1).padStart(2, "0")}_${selYear}.xlsx`)}
-                      className="shrink-0 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                    >
-                      <FileSpreadsheet className="w-4 h-4 mr-2" />
-                      Exportar Excel
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {pendingCount > 0 && (
+                        <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExportClick}
+                        disabled={reviewedReports.length === 0}
+                        className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                        Exportar Excel
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -579,6 +616,38 @@ export default function Home() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Export confirmation dialog — shown when there are pending (unreviewed) reports */}
+      <AlertDialog open={showExportConfirm} onOpenChange={setShowExportConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Partes pendientes sin validar
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Hay <strong>{pendingCount} parte{pendingCount !== 1 ? "s" : ""}</strong> pendiente{pendingCount !== 1 ? "s" : ""} de validación en {MESES[selMonth]} {selYear}.
+                </p>
+                <p>
+                  El Excel solo incluirá los <strong>{reviewedReports.length} parte{reviewedReports.length !== 1 ? "s" : ""} validado{reviewedReports.length !== 1 ? "s" : ""}</strong>. Los pendientes no se exportarán.
+                </p>
+                <p>¿Querés continuar de todas formas?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={doExport}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Sí, exportar validados
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
