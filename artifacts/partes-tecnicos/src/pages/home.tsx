@@ -11,6 +11,7 @@ import {
 import { DashboardSummary } from "@/components/dashboard-summary";
 import { ReportForm } from "@/components/report-form";
 import { ReportsList } from "@/components/reports-list";
+import { TeamShiftsPanel } from "@/components/team-shifts-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -304,7 +305,7 @@ function MonthSelector({
 async function fetchUsers() {
   const res = await fetch(`${BASE_API}/api/users`, { credentials: "include" });
   if (!res.ok) throw new Error("No se pudo cargar la lista de usuarios");
-  return res.json() as Promise<{ userId: string; displayName: string; defaultShift: string }[]>;
+  return res.json() as Promise<{ userId: string; displayName: string; defaultShift: string; role: string }[]>;
 }
 
 export default function Home() {
@@ -327,12 +328,14 @@ export default function Home() {
     staleTime: 30_000,
   });
 
-  const { data: users } = useQuery({
+  const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
     enabled: isSupervisor,
     staleTime: 60_000,
   });
+
+  const technicians = users?.filter((u) => u.role === "technician");
 
   async function handleShiftChange(userId: string, shift: string) {
     try {
@@ -551,6 +554,15 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Team shifts panel — supervisor only */}
+            {isSupervisor && (
+              <TeamShiftsPanel
+                users={technicians}
+                isLoading={isLoadingUsers}
+                onShiftChange={handleShiftChange}
+              />
+            )}
 
             {/* Deleted reports — supervisor only */}
             {isSupervisor && <DeletedReportsSection deletedReports={deletedReports ?? []} isLoading={isLoadingDeleted} onExport={handleExportDeleted} isExporting={isExportingDeleted} />}
