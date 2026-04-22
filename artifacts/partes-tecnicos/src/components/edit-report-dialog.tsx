@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, Eye, EyeOff, Loader2, Pencil } from "lucide-react";
+import { AlertTriangle, Check, Eye, EyeOff, Loader2, Pencil, ShieldCheck } from "lucide-react";
 import type { ServiceReport } from "@workspace/api-client-react";
 
 const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -36,6 +36,7 @@ const editSchema = z.object({
   soloKm40Hours: z.coerce.number().min(0).default(0),
   technicalAssistanceGuard: z.coerce.number().min(0).default(0),
   fieldActivation: z.coerce.number().min(0).default(0),
+  guard: z.boolean().default(false),
   notes: z.string().optional(),
 });
 
@@ -62,7 +63,7 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
     resolver: zodResolver(editSchema),
     defaultValues: {
       workDate: String(report.workDate).substring(0, 10),
-      shiftLabel: report.shiftLabel || "Mañana",
+      shiftLabel: report.shiftLabel === "Tarde" ? "Tarde/Cierre" : (report.shiftLabel || "Tarde/Cierre"),
       serviceActivity: report.serviceActivity || "",
       overtime50Normal: report.overtime50Normal ?? 0,
       overtime50NormalKm40: report.overtime50NormalKm40 ?? 0,
@@ -75,6 +76,7 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
       soloKm40Hours: report.soloKm40Hours ?? 0,
       technicalAssistanceGuard: report.technicalAssistanceGuard ?? 0,
       fieldActivation: report.fieldActivation ?? 0,
+      guard: report.guard ?? false,
       notes: report.notes || "",
     },
   });
@@ -166,7 +168,7 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Mañana">Mañana</SelectItem>
-                          <SelectItem value="Tarde">Tarde</SelectItem>
+                          <SelectItem value="Tarde/Cierre">Tarde/Cierre</SelectItem>
                           <SelectItem value="Noche">Noche</SelectItem>
                         </SelectContent>
                       </Select>
@@ -218,15 +220,36 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
                 </div>
 
                 {/* Adicionales */}
-                <div className="grid grid-cols-3 gap-4">
-                  {(["soloKm40Hours","technicalAssistanceGuard","fieldActivation"] as const).map((name, i) => (
-                    <FormField key={name} control={form.control} name={name} render={({ field }) => (
-                      <FormItem className="border rounded-lg p-3 bg-card shadow-sm">
-                        <FormLabel className="text-xs font-semibold">{["Solo +40km","Guardia","Activación"][i]}</FormLabel>
-                        <FormControl><Input type="number" min="0" step="0.5" {...field} className="font-mono" /></FormControl>
-                      </FormItem>
-                    )} />
-                  ))}
+                <div className="space-y-3">
+                  <FormField control={form.control} name="guard" render={({ field }) => (
+                    <FormItem
+                      className={`rounded-lg border-2 p-3 shadow-sm transition-colors select-none cursor-pointer ${field.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-border bg-card'}`}
+                      onClick={() => field.onChange(!field.value)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${field.value ? 'bg-indigo-500' : 'bg-muted border border-muted-foreground/20'}`}>
+                          {field.value ? <Check className="w-4 h-4 text-white" /> : <ShieldCheck className="w-4 h-4 text-muted-foreground/50" />}
+                        </div>
+                        <FormLabel className="text-sm font-semibold cursor-pointer">Guardia semanal</FormLabel>
+                        <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${field.value ? 'bg-indigo-500 text-white' : 'bg-muted text-muted-foreground'}`}>
+                          {field.value ? "SÍ" : "NO"}
+                        </span>
+                      </div>
+                      <FormControl>
+                        <input type="checkbox" className="sr-only" checked={field.value} onChange={() => {}} />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                  <div className="grid grid-cols-3 gap-4">
+                    {(["soloKm40Hours","technicalAssistanceGuard","fieldActivation"] as const).map((name, i) => (
+                      <FormField key={name} control={form.control} name={name} render={({ field }) => (
+                        <FormItem className="border rounded-lg p-3 bg-card shadow-sm">
+                          <FormLabel className="text-xs font-semibold">{["Solo +40km","Guardia Asistencia","Activación"][i]}</FormLabel>
+                          <FormControl><Input type="number" min="0" step="0.5" {...field} className="font-mono" /></FormControl>
+                        </FormItem>
+                      )} />
+                    ))}
+                  </div>
                 </div>
 
                 <FormField control={form.control} name="notes" render={({ field }) => (

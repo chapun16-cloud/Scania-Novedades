@@ -79,8 +79,13 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
         onClick={onToggle}
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
             <span className="font-bold text-base truncate">{report.technicianName}</span>
+            {report.guard && (
+              <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 shrink-0">
+                Guardia
+              </Badge>
+            )}
             {!report.reviewed && (
               <Badge variant="secondary" className="bg-primary/20 text-primary-foreground hover:bg-primary/30 shrink-0">Pendiente</Badge>
             )}
@@ -174,15 +179,18 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
               </div>
 
               {/* Adicionales */}
-              {(report.soloKm40Hours > 0 || report.soloKm40 || report.technicalAssistanceGuard > 0 || report.fieldActivation > 0) && (
+              {(report.soloKm40Hours > 0 || report.soloKm40 || report.technicalAssistanceGuard > 0 || report.fieldActivation > 0 || report.guard) && (
                 <div>
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 mt-2">Adicionales</h4>
                   <div className="flex flex-wrap gap-2">
+                    {report.guard && (
+                      <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Guardia semanal</Badge>
+                    )}
                     {(report.soloKm40Hours > 0 || report.soloKm40) && (
                       <Badge variant="outline" className="bg-card"><MapPin className="w-3 h-3 mr-1" /> Solo +40km: {report.soloKm40Hours}h</Badge>
                     )}
                     {report.technicalAssistanceGuard > 0 && (
-                      <Badge variant="outline" className="bg-card">Guardia: {report.technicalAssistanceGuard}</Badge>
+                      <Badge variant="outline" className="bg-card">Guardia Asistencia: {report.technicalAssistanceGuard}</Badge>
                     )}
                     {report.fieldActivation > 0 && (
                       <Badge variant="outline" className="bg-card">Activación: {report.fieldActivation}</Badge>

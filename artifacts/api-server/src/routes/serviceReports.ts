@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, isNull, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNull, isNotNull, gte, lt, sql } from "drizzle-orm";
 import {
   CreateServiceReportBody,
   GetServiceReportsSummaryResponse,
@@ -86,6 +86,7 @@ function serializeReport(report: ServiceReport) {
     soloKm40Hours: toNumber(report.soloKm40Hours),
     technicalAssistanceGuard: toNumber(report.technicalAssistanceGuard),
     fieldActivation: toNumber(report.fieldActivation),
+    guard: report.guard ?? false,
     reviewed: report.reviewed ?? false,
     ...calculateTotals(report),
     createdAt: report.createdAt.toISOString(),
@@ -145,6 +146,29 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
 
   const technicianName = parsed.data.technicianName || profile.displayName;
 
+  // Guard limit: max 4 per technician per calendar month
+  if (parsed.data.guard) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(serviceReportsTable)
+      .where(
+        and(
+          eq(serviceReportsTable.ownerUserId, profile.userId),
+          eq(serviceReportsTable.guard, true),
+          isNull(serviceReportsTable.deletedAt),
+          gte(serviceReportsTable.workDate, monthStart),
+          lt(serviceReportsTable.workDate, monthEnd),
+        )
+      );
+    if ((countResult?.count ?? 0) >= 4) {
+      res.status(409).json({ error: "Ya registraste 4 guardias este mes. El adicional Guardia es semanal (máximo 4 por mes)." });
+      return;
+    }
+  }
+
   const [report] = await db
     .insert(serviceReportsTable)
     .values({
@@ -167,6 +191,7 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
       soloKm40Hours: parsed.data.soloKm40Hours,
       technicalAssistanceGuard: parsed.data.technicalAssistanceGuard,
       fieldActivation: parsed.data.fieldActivation,
+      guard: parsed.data.guard ?? false,
       notes: parsed.data.notes ?? "",
     })
     .returning();
@@ -201,7 +226,7 @@ router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): 
   }
 
   // Full-edit fields require password verification
-  const fullEditFields = ["workDate","shiftLabel","serviceActivity","overtime50Normal","overtime50NormalKm40","overtime50WeekendHoliday","overtime50WeekendHolidayKm40","overtime100Normal","overtime100NormalKm40","overtime100WeekendHoliday","overtime100WeekendHolidayKm40","soloKm40","soloKm40Hours","technicalAssistanceGuard","fieldActivation"] as const;
+  const fullEditFields = ["workDate","shiftLabel","serviceActivity","overtime50Normal","overtime50NormalKm40","overtime50WeekendHoliday","overtime50WeekendHolidayKm40","overtime100Normal","overtime100NormalKm40","overtime100WeekendHoliday","overtime100WeekendHolidayKm40","soloKm40","soloKm40Hours","technicalAssistanceGuard","fieldActivation","guard"] as const;
   const isFullEdit = fullEditFields.some((f) => f in req.body);
   if (isFullEdit) {
     const password = parsed.data.password;

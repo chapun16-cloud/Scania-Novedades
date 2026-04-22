@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCreateServiceReport, getGetServiceReportsSummaryQueryKey, getListServiceReportsQueryKey } from "@workspace/api-client-react";
+import { useCreateServiceReport, useListServiceReports, getGetServiceReportsSummaryQueryKey, getListServiceReportsQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2, ShieldCheck } from "lucide-react";
 
 const formSchema = z.object({
   technicianName: z.string().min(1, "El nombre es requerido"),
@@ -30,6 +30,7 @@ const formSchema = z.object({
   soloKm40Hours: z.coerce.number().min(0).default(0),
   technicalAssistanceGuard: z.coerce.number().min(0).default(0),
   fieldActivation: z.coerce.number().min(0).default(0),
+  guard: z.boolean().default(false),
   notes: z.string().optional(),
 });
 
@@ -39,6 +40,18 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createReport = useCreateServiceReport();
+  const { data: allReports } = useListServiceReports();
+
+  const guardUsedThisMonth = useMemo(() => {
+    if (!allReports) return 0;
+    const now = new Date();
+    return allReports.filter(r => {
+      const d = new Date(r.workDate);
+      return r.guard && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+  }, [allReports]);
+
+  const guardLimitReached = guardUsedThisMonth >= 4;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,6 +72,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
       soloKm40Hours: 0,
       technicalAssistanceGuard: 0,
       fieldActivation: 0,
+      guard: false,
       notes: "",
     }
   });
@@ -95,6 +109,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
           soloKm40Hours: 0,
           technicalAssistanceGuard: 0,
           fieldActivation: 0,
+          guard: false,
           notes: "",
         });
       },
@@ -253,7 +268,34 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
           <div className="bg-secondary/5 px-4 py-3 border-b">
             <h3 className="font-semibold text-secondary">Adicionales</h3>
           </div>
-          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Guardia semanal — destacado */}
+            <FormField control={form.control} name="guard" render={({ field }) => (
+              <FormItem className={`md:col-span-2 rounded-lg border-2 p-4 shadow-sm transition-colors select-none ${field.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-border bg-card'} ${guardLimitReached ? 'opacity-60' : 'cursor-pointer'}`}
+                onClick={() => { if (!guardLimitReached) field.onChange(!field.value); }}>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${field.value ? 'bg-indigo-500' : 'bg-muted border border-muted-foreground/20'}`}>
+                      {field.value ? <Check className="w-5 h-5 text-white" /> : <ShieldCheck className="w-5 h-5 text-muted-foreground/50" />}
+                    </div>
+                    <div>
+                      <FormLabel className="text-base font-semibold cursor-pointer">Guardia semanal</FormLabel>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {guardLimitReached
+                          ? "Límite mensual alcanzado (4/4)"
+                          : `${guardUsedThisMonth} de 4 usadas este mes`}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded shrink-0 ${field.value ? 'bg-indigo-500 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    {field.value ? "MARCADA" : "NO"}
+                  </span>
+                </div>
+                <FormControl>
+                  <input type="checkbox" className="sr-only" checked={field.value} onChange={() => {}} disabled={guardLimitReached} />
+                </FormControl>
+              </FormItem>
+            )} />
             <FormField control={form.control} name="soloKm40Hours" render={({ field }) => (
               <FormItem className="rounded-lg border p-4 shadow-sm bg-card">
                 <FormLabel className="text-base block mb-2">Solo +40km</FormLabel>

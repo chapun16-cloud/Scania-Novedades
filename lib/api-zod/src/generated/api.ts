@@ -84,6 +84,7 @@ export const ListServiceReportsResponseItem = zod.object({
   soloKm40Hours: zod.number(),
   technicalAssistanceGuard: zod.number(),
   fieldActivation: zod.number(),
+  guard: zod.boolean().default(false),
   total50Hours: zod.number(),
   total100Hours: zod.number(),
   totalKm40Items: zod.number(),
@@ -157,6 +158,7 @@ export const CreateServiceReportBody = zod.object({
     .number()
     .min(createServiceReportBodyTechnicalAssistanceGuardMin),
   fieldActivation: zod.number().min(createServiceReportBodyFieldActivationMin),
+  guard: zod.boolean().default(false),
   notes: zod.string().optional(),
 });
 
@@ -186,6 +188,7 @@ export const UpdateServiceReportBody = zod.object({
   soloKm40Hours: zod.number().optional(),
   technicalAssistanceGuard: zod.number().optional(),
   fieldActivation: zod.number().optional(),
+  guard: zod.boolean().optional(),
 });
 
 export const UpdateServiceReportResponse = zod.object({
@@ -209,6 +212,7 @@ export const UpdateServiceReportResponse = zod.object({
   soloKm40Hours: zod.number(),
   technicalAssistanceGuard: zod.number(),
   fieldActivation: zod.number(),
+  guard: zod.boolean(),
   total50Hours: zod.number(),
   total100Hours: zod.number(),
   totalKm40Items: zod.number(),
