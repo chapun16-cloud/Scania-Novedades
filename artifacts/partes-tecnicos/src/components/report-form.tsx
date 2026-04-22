@@ -78,7 +78,25 @@ export function ReportForm({ defaultTechnicianName = "" }: { defaultTechnicianNa
         });
         queryClient.invalidateQueries({ queryKey: getListServiceReportsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetServiceReportsSummaryQueryKey() });
-        form.reset({ ...form.getValues(), serviceActivity: "", notes: "" });
+        form.reset({
+          technicianName: defaultTechnicianName,
+          workDate: new Date().toISOString().split('T')[0],
+          shiftLabel: "Mañana",
+          serviceActivity: "",
+          overtime50Normal: 0,
+          overtime50NormalKm40: 0,
+          overtime50WeekendHoliday: 0,
+          overtime50WeekendHolidayKm40: 0,
+          overtime100Normal: 0,
+          overtime100NormalKm40: 0,
+          overtime100WeekendHoliday: 0,
+          overtime100WeekendHolidayKm40: 0,
+          soloKm40: false,
+          soloKm40Hours: 0,
+          technicalAssistanceGuard: 0,
+          fieldActivation: 0,
+          notes: "",
+        });
       },
       onError: () => {
         toast({
