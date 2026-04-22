@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
-import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp } from "lucide-react";
 import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
 
 const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -64,6 +64,75 @@ function computeSummary(reports: ServiceReport[]): ServiceReportsSummary {
     s.totalActivaciones += Number(r.fieldActivation ?? 0);
   }
   return s;
+}
+
+function groupByTechnician(reports: ServiceReport[]): { name: string; reports: ServiceReport[] }[] {
+  const map = new Map<string, ServiceReport[]>();
+  for (const r of reports) {
+    const key = r.technicianName || r.ownerName || "Sin nombre";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(r);
+  }
+  return Array.from(map.entries())
+    .map(([name, reports]) => ({ name, reports }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+}
+
+function TechnicianGroup({
+  name,
+  reports,
+  canReview,
+  defaultOpen,
+}: {
+  name: string;
+  reports: ServiceReport[];
+  canReview: boolean;
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  const total50 = reports.reduce((s, r) => s + Number(r.total50Hours ?? 0), 0);
+  const total100 = reports.reduce((s, r) => s + Number(r.total100Hours ?? 0), 0);
+  const pending = reports.filter((r) => !r.reviewed).length;
+
+  return (
+    <div className="border rounded-xl overflow-hidden shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-4 px-5 py-4 bg-muted/40 hover:bg-muted/60 transition-colors text-left"
+      >
+        <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+          <User className="w-4 h-4 text-secondary-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-base leading-tight truncate">{name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {reports.length} parte{reports.length !== 1 ? "s" : ""}
+            {pending > 0 && (
+              <span className="ml-2 text-primary font-semibold">· {pending} pendiente{pending !== 1 ? "s" : ""}</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="text-right hidden sm:block">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Horas extras</div>
+            <div className="font-mono font-bold text-sm flex gap-2">
+              {total50 > 0 && <span className="text-primary">{total50}h (50%)</span>}
+              {total100 > 0 && <span className="text-destructive">{total100}h (100%)</span>}
+              {total50 === 0 && total100 === 0 && <span className="text-muted-foreground">0h</span>}
+            </div>
+          </div>
+          {open ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+        </div>
+      </button>
+      {open && (
+        <div className="bg-card">
+          <ReportsList reports={reports} canReview={canReview} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function MonthSelector({
@@ -267,37 +336,59 @@ export default function Home() {
             )}
 
             {/* Active reports list */}
-            <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-              <div className="p-5 border-b bg-muted/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold">
-                    {isSupervisor ? "Partes del Equipo" : "Mis Partes"} — {MESES[selMonth]} {selYear}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {filteredReports.length} parte{filteredReports.length !== 1 ? "s" : ""} en este mes.
-                  </p>
-                </div>
-                {isSupervisor && filteredReports.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => exportReportsToExcel(filteredReports, `Novedades_SCANIA_${String(selMonth + 1).padStart(2, "0")}_${selYear}.xlsx`)}
-                    className="shrink-0 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    Exportar Excel
-                  </Button>
-                )}
-              </div>
-              <div className="p-0">
-                {isLoadingReports ? (
-                  <div className="p-6 space-y-4">
-                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+            <div className="space-y-0">
+              <div className="bg-card border rounded-xl shadow-sm overflow-hidden mb-3">
+                <div className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold">
+                      {isSupervisor ? "Partes del Equipo" : "Mis Partes"} — {MESES[selMonth]} {selYear}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {filteredReports.length} parte{filteredReports.length !== 1 ? "s" : ""} en este mes
+                      {isSupervisor && filteredReports.length > 0 && (
+                        <> · {groupByTechnician(filteredReports).length} técnico{groupByTechnician(filteredReports).length !== 1 ? "s" : ""}</>
+                      )}
+                    </p>
                   </div>
-                ) : (
-                  <ReportsList reports={filteredReports} canReview={isSupervisor} />
-                )}
+                  {isSupervisor && filteredReports.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportReportsToExcel(filteredReports, `Novedades_SCANIA_${String(selMonth + 1).padStart(2, "0")}_${selYear}.xlsx`)}
+                      className="shrink-0 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      Exportar Excel
+                    </Button>
+                  )}
+                </div>
               </div>
+
+              {isLoadingReports ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+                </div>
+              ) : filteredReports.length === 0 ? (
+                <div className="bg-card border rounded-xl p-12 text-center text-muted-foreground shadow-sm">
+                  <p>No hay partes registrados en este mes.</p>
+                </div>
+              ) : isSupervisor ? (
+                <div className="space-y-3">
+                  {groupByTechnician(filteredReports).map((group, i) => (
+                    <TechnicianGroup
+                      key={group.name}
+                      name={group.name}
+                      reports={group.reports}
+                      canReview={true}
+                      defaultOpen={i === 0}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+                  <ReportsList reports={filteredReports} canReview={false} />
+                </div>
+              )}
             </div>
 
             {/* Deleted reports — supervisor only */}
