@@ -29,6 +29,7 @@ const APPROVED_NAMES_RAW = [
   "Guillermo Pipet",
   "Nahuel Ueki",
   "Damian Ferrara",
+  "Juan Duarte",
 ];
 
 function normalize(s: string): string {
