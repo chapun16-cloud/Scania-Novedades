@@ -5,8 +5,9 @@ import { getGetCurrentProfileQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wrench, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useClerk } from "@clerk/react";
+import scaniaLionWatermark from "@/assets/scania-lion-watermark.png";
 
 const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -52,8 +53,8 @@ export default function ProfileSetup() {
     <div className="min-h-[100dvh] bg-background flex flex-col">
       <header className="bg-secondary text-secondary-foreground py-4 px-6 border-b border-secondary-border shadow-sm">
         <div className="max-w-xl mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-            <Wrench className="w-6 h-6" />
+          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+            <img src={scaniaLionWatermark} alt="SCANIA" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">SCANIA</h1>

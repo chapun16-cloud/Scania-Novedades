@@ -95,8 +95,8 @@ function LandingPage() {
       <header className="bg-secondary text-secondary-foreground py-4 px-6 border-b border-secondary-border shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-              <Wrench className="w-6 h-6" />
+            <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+              <img src={scaniaLionWatermark} alt="SCANIA" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">SCANIA</h1>

@@ -20,6 +20,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
 import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp } from "lucide-react";
 import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
+import scaniaLionWatermark from "@/assets/scania-lion-watermark.png";
 
 const SHIFT_OPTIONS = ["Mañana", "Tarde/Cierre", "Noche"];
 
@@ -407,8 +408,8 @@ export default function Home() {
       <header className="bg-secondary text-secondary-foreground py-4 px-6 sticky top-0 z-10 border-b border-secondary-border shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-              <Wrench className="w-6 h-6" />
+            <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+              <img src={scaniaLionWatermark} alt="SCANIA" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">SCANIA</h1>
