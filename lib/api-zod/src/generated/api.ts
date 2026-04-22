@@ -157,6 +157,22 @@ export const UpdateServiceReportParams = zod.object({
 export const UpdateServiceReportBody = zod.object({
   reviewed: zod.boolean().optional(),
   notes: zod.string().optional(),
+  password: zod.string().optional(),
+  workDate: zod.string().optional(),
+  shiftLabel: zod.string().optional(),
+  serviceActivity: zod.string().optional(),
+  overtime50Normal: zod.number().optional(),
+  overtime50NormalKm40: zod.number().optional(),
+  overtime50WeekendHoliday: zod.number().optional(),
+  overtime50WeekendHolidayKm40: zod.number().optional(),
+  overtime100Normal: zod.number().optional(),
+  overtime100NormalKm40: zod.number().optional(),
+  overtime100WeekendHoliday: zod.number().optional(),
+  overtime100WeekendHolidayKm40: zod.number().optional(),
+  soloKm40: zod.boolean().optional(),
+  soloKm40Hours: zod.number().optional(),
+  technicalAssistanceGuard: zod.number().optional(),
+  fieldActivation: zod.number().optional(),
 });
 
 export const UpdateServiceReportResponse = zod.object({

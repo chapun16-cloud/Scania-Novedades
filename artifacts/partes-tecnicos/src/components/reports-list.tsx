@@ -3,12 +3,13 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, MapPin, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, ChevronDown, ChevronUp, Trash2, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { DeleteReportDialog } from "@/components/delete-report-dialog";
+import { EditReportDialog } from "@/components/edit-report-dialog";
 
 export function ReportsList({ reports, canReview = false }: { reports: ServiceReport[]; canReview?: boolean }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -42,6 +43,7 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
   const { toast } = useToast();
   const [notes, setNotes] = useState(report.notes || "");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const handleReview = () => {
     updateReport.mutate({ id: report.id, data: { reviewed: true } }, {
@@ -107,7 +109,18 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
             </div>
           </div>
 
-          {/* Delete button — supervisor only, pending only */}
+          {/* Edit + Delete buttons — supervisor only */}
+          {canReview && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-primary/60 hover:text-primary hover:bg-primary/10 shrink-0"
+              onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}
+              title="Modificar parte"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+          )}
           {canReview && !report.reviewed && (
             <Button
               variant="ghost"
@@ -236,6 +249,16 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         onDeleted={handleDeleted}
+      />
+      <EditReportDialog
+        report={report}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => {
+          toast({ title: "Parte modificado", description: "Los cambios se guardaron correctamente." });
+          queryClient.invalidateQueries({ queryKey: getListServiceReportsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetServiceReportsSummaryQueryKey() });
+        }}
       />
     </div>
   );

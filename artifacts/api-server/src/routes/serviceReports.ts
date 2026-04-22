@@ -200,9 +200,29 @@ router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): 
     return;
   }
 
+  // Full-edit fields require password verification
+  const fullEditFields = ["workDate","shiftLabel","serviceActivity","overtime50Normal","overtime50NormalKm40","overtime50WeekendHoliday","overtime50WeekendHolidayKm40","overtime100Normal","overtime100NormalKm40","overtime100WeekendHoliday","overtime100WeekendHolidayKm40","soloKm40","soloKm40Hours","technicalAssistanceGuard","fieldActivation"] as const;
+  const isFullEdit = fullEditFields.some((f) => f in req.body);
+  if (isFullEdit) {
+    const password = parsed.data.password;
+    if (!password) {
+      res.status(400).json({ error: "Contraseña requerida para modificar un parte" });
+      return;
+    }
+    try {
+      const result = await clerkClient.users.verifyPassword({ userId: req.userId!, password });
+      if (!result.verified) { res.status(401).json({ error: "Contraseña incorrecta" }); return; }
+    } catch {
+      res.status(401).json({ error: "Contraseña incorrecta" }); return;
+    }
+  }
+
+  // Strip password before persisting
+  const { password: _pw, ...updateData } = parsed.data;
+
   const [report] = await db
     .update(serviceReportsTable)
-    .set(parsed.data)
+    .set(updateData)
     .where(eq(serviceReportsTable.id, params.data.id))
     .returning();
 
