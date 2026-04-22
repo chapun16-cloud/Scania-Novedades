@@ -127,10 +127,19 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
     [
       "", "", "", "",
       "52,01", "52,04",
+      "41,5", "41", "42,5", "42",
+      "41,57", "41,17", "42,57", "42,17",
+      "", "53",
+      "", "", "", "",
+    ],
+    // Row 7 (descriptive note row)
+    [
+      "", "", "", "",
+      "Cargar cantidad de Guardias", "Cargar cantidad de Utilizaciones",
       "", "", "", "", "", "", "", "", "", "", "", "", "",
       "N° OT, Ausencias por Vacaciones, días flex, otras ausencias",
     ],
-    // Row 7 (empty separator)
+    // Row 8 (empty separator)
     Array(20).fill(""),
   ];
 
