@@ -171,6 +171,58 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
+  // ── Cell styles matching the original Scania form ──────────────────────────
+  type CellStyle = {
+    fill?: { patternType: string; fgColor: { rgb: string } };
+    font?: { color: { rgb: string }; bold?: boolean };
+  };
+
+  const solidFill = (rgb: string): CellStyle["fill"] => ({
+    patternType: "solid",
+    fgColor: { rgb },
+  });
+
+  const NAVY   = "203864"; // dark navy — identity cols & DESCONTAR
+  const CYAN   = "CCFFFF"; // light cyan — Guardias & Activaciones
+  const GRAY   = "808080"; // medium gray — codes row
+  const YELLOW = "FFFF00"; // yellow — descriptive note row
+
+  const WHITE_FONT = { color: { rgb: "FFFFFF" } };
+  const BLACK_FONT = { color: { rgb: "000000" } };
+
+  const setStyle = (r: number, c: number, style: CellStyle) => {
+    const addr = XLSX.utils.encode_cell({ r, c });
+    if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+    (ws[addr] as Record<string, unknown>).s = style;
+  };
+
+  // Rows 0-4: multi-row header block
+  for (let r = 0; r <= 4; r++) {
+    for (let c = 0; c <= 19; c++) {
+      if (c <= 3) {
+        setStyle(r, c, { fill: solidFill(NAVY), font: WHITE_FONT });
+      } else if (c <= 5) {
+        setStyle(r, c, { fill: solidFill(CYAN), font: BLACK_FONT });
+      } else if (c >= 16) {
+        setStyle(r, c, { fill: solidFill(NAVY), font: WHITE_FONT });
+      }
+      // cols 6-15: no fill (white — left as default)
+    }
+  }
+
+  // Row 5 (index 5): official codes — medium gray
+  for (let c = 0; c <= 19; c++) {
+    setStyle(5, c, { fill: solidFill(GRAY), font: WHITE_FONT });
+  }
+
+  // Row 6 (index 6): descriptive note — yellow on E, F, T; white elsewhere
+  for (let c = 0; c <= 19; c++) {
+    if (c === 4 || c === 5 || c === 19) {
+      setStyle(6, c, { fill: solidFill(YELLOW), font: BLACK_FONT });
+    }
+  }
+  // ── End styles ─────────────────────────────────────────────────────────────
+
   // Merge cells for the multi-row headers
   ws["!merges"] = [
     // Legajo
@@ -256,7 +308,7 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
   const period = `${String(date.getMonth() + 1).padStart(2, "0")}_${date.getFullYear()}`;
   const outputFilename = filename || `Novedades_SCANIA_${period}.xlsx`;
 
-  XLSX.writeFile(wb, outputFilename);
+  XLSX.writeFile(wb, outputFilename, { cellStyles: true });
 }
 
 export function exportDeletedReportsToExcel(reports: DeletedReport[], filename?: string) {
