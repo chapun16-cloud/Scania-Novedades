@@ -81,7 +81,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
         form.reset({
           technicianName: defaultTechnicianName,
           workDate: new Date().toISOString().split('T')[0],
-          shiftLabel: "Mañana",
+          shiftLabel: defaultShift,
           serviceActivity: "",
           overtime50Normal: 0,
           overtime50NormalKm40: 0,

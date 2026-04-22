@@ -101,7 +101,7 @@ export function serializeProfile(profile: UserProfile) {
   return {
     ...profile,
     role: profile.role === "supervisor" ? "supervisor" : "technician",
-    defaultShift: profile.defaultShift || "Tarde/Cierre",
+    defaultShift: profile.defaultShift === "Tarde" ? "Tarde/Cierre" : (profile.defaultShift || "Tarde/Cierre"),
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
   };
@@ -237,7 +237,7 @@ router.get("/users", requireAuth, async (req: AppRequest, res): Promise<void> =>
 });
 
 // ─── PATCH /users/:userId/shift (supervisor only) ────────────────────────────
-const PatchShiftBody = z.object({ defaultShift: z.string().min(1) });
+const PatchShiftBody = z.object({ defaultShift: z.enum(["Mañana", "Tarde/Cierre", "Noche"]) });
 
 router.patch("/users/:userId/shift", requireAuth, async (req: AppRequest, res): Promise<void> => {
   const profile = await getExistingProfile(req);
