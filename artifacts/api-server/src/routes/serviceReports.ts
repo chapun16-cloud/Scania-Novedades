@@ -146,11 +146,11 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
 
   const technicianName = parsed.data.technicianName || profile.displayName;
 
-  // Guard limit: max 4 per technician per calendar month
+  // Guard limit: max 4 per technician per calendar month of workDate
   if (parsed.data.guard) {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
+    const workDate = new Date(parsed.data.workDate);
+    const monthStart = new Date(workDate.getFullYear(), workDate.getMonth(), 1).toISOString().split("T")[0];
+    const monthEnd = new Date(workDate.getFullYear(), workDate.getMonth() + 1, 1).toISOString().split("T")[0];
     const [countResult] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(serviceReportsTable)
