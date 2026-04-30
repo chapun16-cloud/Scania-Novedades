@@ -15,11 +15,13 @@ import { TeamShiftsPanel } from "@/components/team-shifts-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useClerk } from "@clerk/react";
-import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Wrench, LayoutDashboard, LogOut, FileSpreadsheet, Trash2, Loader2, ChevronLeft, ChevronRight, User, ChevronDown, ChevronUp, AlertTriangle, Settings, UserPlus, ShieldCheck, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -318,6 +320,183 @@ async function fetchUsers() {
   return res.json() as Promise<{ userId: string; displayName: string; defaultShift: string; role: string }[]>;
 }
 
+type AllowedUser = { id: number; displayName: string; isSupervisor: boolean; createdAt: string };
+
+async function fetchAllowedUsers(): Promise<AllowedUser[]> {
+  const res = await fetch(`${BASE_API}/api/allowed-users`, { credentials: "include" });
+  if (!res.ok) throw new Error("No se pudo cargar la lista");
+  return res.json();
+}
+
+function AllowedUsersPanel() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [newName, setNewName] = useState("");
+  const [isSupervisor, setIsSupervisor] = useState(false);
+
+  const { data: allowed, isLoading } = useQuery({
+    queryKey: ["allowed-users"],
+    queryFn: fetchAllowedUsers,
+    staleTime: 30_000,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (data: { displayName: string; isSupervisor: boolean }) => {
+      const res = await fetch(`${BASE_API}/api/allowed-users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || "Error al agregar");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setNewName("");
+      setIsSupervisor(false);
+      queryClient.invalidateQueries({ queryKey: ["allowed-users"] });
+      toast({ title: "Usuario agregado", description: "El nombre fue añadido a la lista." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`${BASE_API}/api/allowed-users/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Error al eliminar");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allowed-users"] });
+      toast({ title: "Usuario eliminado" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "No se pudo eliminar el usuario.", variant: "destructive" });
+    },
+  });
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = newName.trim();
+    if (trimmed.split(/\s+/).length < 2) {
+      toast({ title: "Nombre incompleto", description: "Ingresá nombre y apellido.", variant: "destructive" });
+      return;
+    }
+    addMutation.mutate({ displayName: trimmed, isSupervisor });
+  }
+
+  const supervisors = allowed?.filter((u) => u.isSupervisor) ?? [];
+  const technicians = allowed?.filter((u) => !u.isSupervisor) ?? [];
+
+  return (
+    <div className="space-y-6">
+      {/* Add new user */}
+      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="p-5 border-b bg-muted/30">
+          <h3 className="text-base font-semibold flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-primary" />
+            Agregar usuario permitido
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Solo los nombres en esta lista pueden registrarse en la aplicación.
+          </p>
+        </div>
+        <form onSubmit={handleAdd} className="p-5 flex flex-col sm:flex-row gap-3">
+          <Input
+            placeholder="Nombre y Apellido (ej: Juan Pérez)"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1"
+          />
+          <label className="flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap select-none">
+            <input
+              type="checkbox"
+              checked={isSupervisor}
+              onChange={(e) => setIsSupervisor(e.target.checked)}
+              className="w-4 h-4 rounded accent-primary"
+            />
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            Supervisor
+          </label>
+          <Button type="submit" disabled={!newName.trim() || addMutation.isPending} className="shrink-0">
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Agregar"}
+          </Button>
+        </form>
+      </div>
+
+      {/* Supervisors */}
+      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b bg-muted/30 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <span className="font-semibold text-sm">Supervisores ({supervisors.length})</span>
+        </div>
+        {isLoading ? (
+          <div className="p-4 space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}</div>
+        ) : supervisors.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">No hay supervisores registrados.</p>
+        ) : (
+          <ul className="divide-y">
+            {supervisors.map((u) => (
+              <li key={u.id} className="flex items-center justify-between px-5 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">{u.displayName}</span>
+                  <Badge variant="secondary" className="text-emerald-700 bg-emerald-50 border-emerald-200 text-xs">Supervisor</Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeMutation.mutate(u.id)}
+                  disabled={removeMutation.isPending}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Technicians */}
+      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b bg-muted/30 flex items-center gap-2">
+          <User className="w-4 h-4 text-primary" />
+          <span className="font-semibold text-sm">Técnicos ({technicians.length})</span>
+        </div>
+        {isLoading ? (
+          <div className="p-4 space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}</div>
+        ) : technicians.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">No hay técnicos registrados.</p>
+        ) : (
+          <ul className="divide-y">
+            {technicians.map((u) => (
+              <li key={u.id} className="flex items-center justify-between px-5 py-3">
+                <span className="font-medium text-sm">{u.displayName}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeMutation.mutate(u.id)}
+                  disabled={removeMutation.isPending}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { signOut } = useClerk();
   const { toast } = useToast();
@@ -492,6 +671,12 @@ export default function Home() {
                 <LayoutDashboard className="w-4 h-4 mr-2" />
                 {isSupervisor ? "Dashboard & Revisión" : "Mi Historial"}
               </TabsTrigger>
+              {isSupervisor && (
+                <TabsTrigger value="config" className="font-medium px-6 data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configuración
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
 
@@ -614,6 +799,22 @@ export default function Home() {
             {/* Deleted reports — supervisor only */}
             {isSupervisor && <DeletedReportsSection deletedReports={deletedReports ?? []} isLoading={isLoadingDeleted} onExport={handleExportDeleted} isExporting={isExportingDeleted} />}
           </TabsContent>
+
+          {/* ── Configuración (supervisor only) ── */}
+          {isSupervisor && (
+            <TabsContent value="config" className="mt-0 outline-none space-y-6">
+              <div className="bg-card border rounded-xl shadow-sm p-5">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-primary" />
+                  Gestión de usuarios permitidos
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Administrá quiénes pueden registrarse en la aplicación. Solo los nombres de esta lista pueden crear una cuenta.
+                </p>
+              </div>
+              <AllowedUsersPanel />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 

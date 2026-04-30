@@ -7,7 +7,7 @@ import {
   UpdateCurrentProfileResponse,
   ListUsersResponse,
 } from "@workspace/api-zod";
-import { db, userProfilesTable, type UserProfile } from "@workspace/db";
+import { db, userProfilesTable, allowedUsersTable, type UserProfile } from "@workspace/db";
 import { z } from "zod";
 
 export type AppRequest = Request & {
@@ -16,24 +16,7 @@ export type AppRequest = Request & {
 
 const router: IRouter = Router();
 
-// ─── Approved names list ─────────────────────────────────────────────────────
-const APPROVED_NAMES_RAW = [
-  "Daniel Castaneda",
-  "Tatiana Leal",
-  "Pedro Gonzalez",
-  "Jonatan Baez",
-  "Fernando Barrera",
-  "Javier Espinola",
-  "Gustavo Mancuello Baez",
-  "Cristian Martinez",
-  "Gonzalo Perez",
-  "Guillermo Pipet",
-  "Nahuel Ueki",
-  "Damian Ferrara",
-  "Juan Duarte",
-];
-
-function normalize(s: string): string {
+export function normalize(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
@@ -41,26 +24,31 @@ function normalize(s: string): string {
     .trim();
 }
 
-const APPROVED_NAMES = APPROVED_NAMES_RAW.map(normalize);
-
-// Only these users may have the "supervisor" role
-const SUPERVISOR_NAMES_RAW = [
-  "Daniel Castaneda",
-  "Tatiana Leal",
-  "Damian Ferrara",
-];
-const SUPERVISOR_NAMES = SUPERVISOR_NAMES_RAW.map(normalize);
-
-function isApprovedName(firstName: string, lastName: string): boolean {
+async function isApprovedName(firstName: string, lastName: string): Promise<boolean> {
   const enteredWords = [firstName, lastName]
     .flatMap((s) => normalize(s).split(/\s+/))
     .filter((w) => w.length > 1);
 
   if (enteredWords.length < 2) return false;
 
-  return APPROVED_NAMES.some((approved) =>
+  const approvedList = await db.select({ displayName: allowedUsersTable.displayName }).from(allowedUsersTable);
+  const approvedNorms = approvedList.map((r) => normalize(r.displayName));
+
+  return approvedNorms.some((approved) =>
     enteredWords.every((word) => approved.includes(word)),
   );
+}
+
+async function isSupervisorName(displayName: string): Promise<boolean> {
+  const norm = normalize(displayName);
+  const supervisors = await db
+    .select({ displayName: allowedUsersTable.displayName })
+    .from(allowedUsersTable)
+    .where(eq(allowedUsersTable.isSupervisor, true));
+  return supervisors.some((s) => {
+    const sn = normalize(s.displayName);
+    return norm.includes(sn) || sn.includes(norm);
+  });
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -168,7 +156,7 @@ router.post("/profile/setup", requireAuth, async (req: AppRequest, res): Promise
 
   const { firstName, lastName } = parsed.data;
 
-  if (!isApprovedName(firstName, lastName)) {
+  if (!(await isApprovedName(firstName, lastName))) {
     res.status(403).json({
       error: "Tu nombre no está en la lista de usuarios autorizados. Contactá al administrador.",
     });
@@ -208,8 +196,7 @@ router.patch("/profile", requireAuth, async (req: AppRequest, res): Promise<void
 
   // Enforce: only whitelisted names can hold the supervisor role
   if (parsed.data.role === "supervisor") {
-    const nameNorm = normalize(profile.displayName);
-    const allowed = SUPERVISOR_NAMES.some((sn) => nameNorm.includes(sn) || sn.includes(nameNorm));
+    const allowed = await isSupervisorName(profile.displayName);
     if (!allowed) {
       res.status(403).json({ error: "No tenés permisos para asumir el rol de supervisor." });
       return;
