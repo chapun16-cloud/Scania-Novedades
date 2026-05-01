@@ -35,7 +35,7 @@ import {
 import { exportReportsToExcel, exportDeletedReportsToExcel, type DeletedReport } from "@/lib/exportExcel";
 import scaniaLionWatermark from "@/assets/scania-lion-watermark.png";
 
-const SHIFT_OPTIONS = ["Mañana", "Tarde/Cierre", "Noche"];
+const SHIFT_OPTIONS = ["Mañana", "Tarde", "Noche"];
 
 const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -410,7 +410,7 @@ function AllowedUsersPanel() {
         </div>
         <form onSubmit={handleAdd} className="p-5 flex flex-col sm:flex-row gap-3">
           <Input
-            placeholder="Nombre y Apellido (ej: Juan Pérez)"
+            placeholder="Nombre y Apellido (ej: Diego Maradona)"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="flex-1"
@@ -688,7 +688,7 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">Complete los datos del turno y horas extras.</p>
               </div>
               <div className="p-6">
-                <ReportForm defaultTechnicianName={profile.displayName} defaultShift={profile.defaultShift ?? "Tarde/Cierre"} />
+                <ReportForm defaultTechnicianName={profile.displayName} defaultShift={profile.defaultShift ?? "Tarde"} />
               </div>
             </div>
           </TabsContent>

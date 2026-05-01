@@ -79,7 +79,7 @@ export default function ProfileSetup() {
                   </Label>
                   <Input
                     id="firstName"
-                    placeholder="Ej. Daniel"
+                    placeholder="Ej. Pablo"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={isLoading}
@@ -94,7 +94,7 @@ export default function ProfileSetup() {
                   </Label>
                   <Input
                     id="lastName"
-                    placeholder="Ej. Castaneda"
+                    placeholder="Ej. Aimar"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={isLoading}

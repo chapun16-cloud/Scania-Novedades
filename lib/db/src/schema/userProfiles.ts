@@ -16,16 +16,22 @@ export const userProfilesTable = pgTable(
     displayName: text("display_name").notNull().default(""),
     email: text("email").notNull().default(""),
     role: text("role").notNull().default("technician"),
-    defaultShift: text("default_shift").notNull().default("Tarde/Cierre"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    defaultShift: text("default_shift").notNull().default("Tarde"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => ({
     userIdIdx: uniqueIndex("user_profiles_user_id_idx").on(table.userId),
   }),
 );
 
-export const insertUserProfileSchema = createInsertSchema(userProfilesTable).omit({
+export const insertUserProfileSchema = createInsertSchema(
+  userProfilesTable,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
