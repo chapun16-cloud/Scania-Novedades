@@ -10,7 +10,7 @@ const router: IRouter = Router();
 const INITIAL_APPROVED: { displayName: string; isSupervisor: boolean }[] = [
   { displayName: "Daniel Castaneda", isSupervisor: true },
   { displayName: "Tatiana Leal", isSupervisor: true },
-  { displayName: "Damian Ferrara", isSupervisor: true },
+  { displayName: "Marcos Damian Ferrara", isSupervisor: true },
   { displayName: "Pedro Gonzalez", isSupervisor: false },
   { displayName: "Jonatan Baez", isSupervisor: false },
   { displayName: "Fernando Barrera", isSupervisor: false },
