@@ -320,12 +320,26 @@ async function fetchUsers() {
   return res.json() as Promise<{ userId: string; displayName: string; defaultShift: string; role: string }[]>;
 }
 
-type AllowedUser = { id: number; displayName: string; isSupervisor: boolean; createdAt: string };
+type AllowedUser = { id: number; displayName: string; isSupervisor: boolean; createdAt: string; defaultShift: string | null; registered: boolean };
 
 async function fetchAllowedUsers(): Promise<AllowedUser[]> {
   const res = await fetch(`${BASE_API}/api/allowed-users`, { credentials: "include" });
   if (!res.ok) throw new Error("No se pudo cargar la lista");
   return res.json();
+}
+
+function ShiftBadge({ shift }: { shift: string }) {
+  const colors: Record<string, string> = {
+    "Mañana": "bg-amber-50 text-amber-700 border-amber-200",
+    "Tarde/Cierre": "bg-blue-50 text-blue-700 border-blue-200",
+    "Noche": "bg-indigo-50 text-indigo-700 border-indigo-200",
+  };
+  const cls = colors[shift] ?? "bg-muted text-muted-foreground border-border";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}>
+      {shift}
+    </span>
+  );
 }
 
 function AllowedUsersPanel() {
@@ -445,9 +459,14 @@ function AllowedUsersPanel() {
           <ul className="divide-y">
             {supervisors.map((u) => (
               <li key={u.id} className="flex items-center justify-between px-5 py-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm">{u.displayName}</span>
                   <Badge variant="secondary" className="text-emerald-700 bg-emerald-50 border-emerald-200 text-xs">Supervisor</Badge>
+                  {u.defaultShift ? (
+                    <ShiftBadge shift={u.defaultShift} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">Sin registrar</span>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -478,7 +497,14 @@ function AllowedUsersPanel() {
           <ul className="divide-y">
             {technicians.map((u) => (
               <li key={u.id} className="flex items-center justify-between px-5 py-3">
-                <span className="font-medium text-sm">{u.displayName}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-sm">{u.displayName}</span>
+                  {u.defaultShift ? (
+                    <ShiftBadge shift={u.defaultShift} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">Sin registrar</span>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"

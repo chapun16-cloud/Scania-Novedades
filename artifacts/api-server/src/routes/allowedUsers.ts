@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, allowedUsersTable } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { db, allowedUsersTable, userProfilesTable } from "@workspace/db";
 import { z } from "zod";
 import { requireAuth, getExistingProfile, type AppRequest } from "./profiles";
 import type { Response } from "express";
@@ -36,7 +36,21 @@ router.get("/allowed-users", requireAuth, async (req: AppRequest, res: Response)
     res.status(403).json({ error: "Solo el supervisor puede ver la lista de usuarios permitidos" });
     return;
   }
-  const list = await db.select().from(allowedUsersTable).orderBy(allowedUsersTable.displayName);
+  const list = await db
+    .select({
+      id: allowedUsersTable.id,
+      displayName: allowedUsersTable.displayName,
+      isSupervisor: allowedUsersTable.isSupervisor,
+      createdAt: allowedUsersTable.createdAt,
+      defaultShift: userProfilesTable.defaultShift,
+      registered: sql<boolean>`(${userProfilesTable.id} IS NOT NULL)`,
+    })
+    .from(allowedUsersTable)
+    .leftJoin(
+      userProfilesTable,
+      sql`LOWER(${userProfilesTable.displayName}) = LOWER(${allowedUsersTable.displayName})`,
+    )
+    .orderBy(allowedUsersTable.displayName);
   res.json(list);
 });
 
