@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type DeleteServiceReportBody = {
-  password: string;
-};
+export interface UpdateServiceReportRequest {
+  reviewed?: boolean;
+  notes?: string;
+}

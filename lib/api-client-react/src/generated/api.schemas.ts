@@ -9,10 +9,9 @@ export interface HealthStatus {
   status: string;
 }
 
-export type UserProfileRole =
-  (typeof UserProfileRole)[keyof typeof UserProfileRole];
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
-export const UserProfileRole = {
+export const UserRole = {
   technician: "technician",
   supervisor: "supervisor",
 } as const;
@@ -22,24 +21,17 @@ export interface UserProfile {
   userId: string;
   displayName: string;
   email: string;
-  role: UserProfileRole;
+  role: UserRole;
   defaultShift: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export type UpdateProfileBodyRole =
-  (typeof UpdateProfileBodyRole)[keyof typeof UpdateProfileBodyRole];
-
-export const UpdateProfileBodyRole = {
-  technician: "technician",
-  supervisor: "supervisor",
-} as const;
-
-export interface UpdateProfileBody {
-  role?: UpdateProfileBodyRole;
+export interface UpdateUserProfileRequest {
+  /** @minLength 1 */
+  displayName?: string;
+  role?: UserRole;
   defaultShift?: string;
-  password?: string;
 }
 
 export interface ServiceReport {
@@ -64,85 +56,63 @@ export interface ServiceReport {
   technicalAssistanceGuard: number;
   fieldActivation: number;
   guard: boolean;
-  notes: string;
-  reviewed: boolean;
   total50Hours: number;
   total100Hours: number;
   totalKm40Items: number;
   totalAdditionalItems: number;
+  reviewed: boolean;
+  notes: string;
   createdAt: string;
-  deletedAt?: string | null;
-  deletedBy?: string | null;
 }
 
-export interface CreateServiceReportBody {
+export interface CreateServiceReportRequest {
+  /** @minLength 1 */
+  technicianName: string;
   workDate: string;
   shiftLabel?: string;
+  /** @minLength 1 */
   serviceActivity: string;
-  technicianName?: string;
-  overtime50Normal?: number;
-  overtime50NormalKm40?: number;
-  overtime50WeekendHoliday?: number;
-  overtime50WeekendHolidayKm40?: number;
-  overtime100Normal?: number;
-  overtime100NormalKm40?: number;
-  overtime100WeekendHoliday?: number;
-  overtime100WeekendHolidayKm40?: number;
-  soloKm40?: boolean;
-  soloKm40Hours?: number;
-  technicalAssistanceGuard?: number;
-  fieldActivation?: number;
+  /** @minimum 0 */
+  overtime50Normal: number;
+  /** @minimum 0 */
+  overtime50NormalKm40: number;
+  /** @minimum 0 */
+  overtime50WeekendHoliday: number;
+  /** @minimum 0 */
+  overtime50WeekendHolidayKm40: number;
+  /** @minimum 0 */
+  overtime100Normal: number;
+  /** @minimum 0 */
+  overtime100NormalKm40: number;
+  /** @minimum 0 */
+  overtime100WeekendHoliday: number;
+  /** @minimum 0 */
+  overtime100WeekendHolidayKm40: number;
+  soloKm40: boolean;
+  /** @minimum 0 */
+  soloKm40Hours: number;
+  /** @minimum 0 */
+  technicalAssistanceGuard: number;
+  /** @minimum 0 */
+  fieldActivation: number;
   guard?: boolean;
   notes?: string;
 }
 
-export interface UpdateServiceReportBody {
-  workDate?: string;
-  shiftLabel?: string;
-  serviceActivity?: string;
-  overtime50Normal?: number;
-  overtime50NormalKm40?: number;
-  overtime50WeekendHoliday?: number;
-  overtime50WeekendHolidayKm40?: number;
-  overtime100Normal?: number;
-  overtime100NormalKm40?: number;
-  overtime100WeekendHoliday?: number;
-  overtime100WeekendHolidayKm40?: number;
-  soloKm40?: boolean;
-  soloKm40Hours?: number;
-  technicalAssistanceGuard?: number;
-  fieldActivation?: number;
-  guard?: boolean;
-  notes?: string;
+export interface UpdateServiceReportRequest {
   reviewed?: boolean;
-  password?: string;
+  notes?: string;
 }
 
-export type ServiceReportsSummaryItemsItem = {
-  technicianName: string;
+export interface ServiceReportsSummary {
+  totalReports: number;
+  pendingReview: number;
+  reviewedReports: number;
   total50Hours: number;
   total100Hours: number;
   totalKm40Items: number;
-  totalAdditionalItems: number;
-  guardCount: number;
-  reportCount: number;
-};
-
-export type ServiceReportsSummaryPeriod = {
-  start?: string;
-  end?: string;
-};
-
-export interface ServiceReportsSummary {
-  items: ServiceReportsSummaryItemsItem[];
-  period?: ServiceReportsSummaryPeriod;
+  totalSoloKm40Hours: number;
+  totalGuardias: number;
+  totalActivaciones: number;
+  latestReportDate: string | null;
 }
-
-export type SetupProfileBody = {
-  firstName: string;
-  lastName: string;
-};
-
-export type DeleteServiceReportBody = {
-  password: string;
-};

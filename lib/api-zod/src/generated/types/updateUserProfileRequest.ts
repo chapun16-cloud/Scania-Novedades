@@ -7,12 +7,8 @@
  */
 import type { UserRole } from "./userRole";
 
-export interface UserProfile {
-  id: number;
-  userId: string;
-  displayName: string;
-  email: string;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
+export interface UpdateUserProfileRequest {
+  /** @minLength 1 */
+  displayName?: string;
+  role?: UserRole;
 }

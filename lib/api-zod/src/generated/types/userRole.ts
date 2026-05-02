@@ -6,10 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type UpdateProfileBodyRole =
-  (typeof UpdateProfileBodyRole)[keyof typeof UpdateProfileBodyRole];
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
-export const UpdateProfileBodyRole = {
+export const UserRole = {
   technician: "technician",
   supervisor: "supervisor",
 } as const;

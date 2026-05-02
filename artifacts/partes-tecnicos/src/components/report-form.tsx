@@ -300,7 +300,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
               <FormItem className="rounded-lg border p-4 shadow-sm bg-card">
                 <FormLabel className="text-base block mb-2">Solo +40km</FormLabel>
                 <FormControl><Input type="number" min="0" step="0.5" placeholder="Horas" {...field} className="font-mono" /></FormControl>
-                <p className="text-xs text-muted-foreground mt-2">Cantidad de horas del adicional +40km horario normal.</p>
+                <p className="text-xs text-muted-foreground mt-2">Cantidad de horas del adicional +40km.</p>
               </FormItem>
             )} />
             <FormField control={form.control} name="technicalAssistanceGuard" render={({ field }) => (
@@ -311,7 +311,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
             )} />
             <FormField control={form.control} name="fieldActivation" render={({ field }) => (
               <FormItem className="rounded-lg border p-4 shadow-sm bg-card">
-                <FormLabel className="text-base block mb-2">Activación SOS</FormLabel>
+                <FormLabel className="text-base block mb-2">Activación Campo</FormLabel>
                 <FormControl><Input type="number" min="0" {...field} className="font-mono" /></FormControl>
               </FormItem>
             )} />
@@ -323,7 +323,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-semibold text-secondary">Notas /Cursos /Cubrir CWS/ Observaciones</FormLabel>
+              <FormLabel className="font-semibold text-secondary">Notas / Observaciones</FormLabel>
               <FormControl>
                 <Textarea placeholder="Comentarios adicionales..." className="resize-none h-24 bg-muted/50" {...field} />
               </FormControl>

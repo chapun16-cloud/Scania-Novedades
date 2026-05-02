@@ -6,16 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from "./createServiceReportBody";
-export * from "./deleteServiceReportBody";
+export * from "./createServiceReportRequest";
 export * from "./healthStatus";
 export * from "./serviceReport";
 export * from "./serviceReportsSummary";
-export * from "./serviceReportsSummaryItemsItem";
-export * from "./serviceReportsSummaryPeriod";
-export * from "./setupProfileBody";
-export * from "./updateProfileBody";
-export * from "./updateProfileBodyRole";
-export * from "./updateServiceReportBody";
+export * from "./updateServiceReportRequest";
+export * from "./updateUserProfileRequest";
 export * from "./userProfile";
-export * from "./userProfileRole";
+export * from "./userRole";

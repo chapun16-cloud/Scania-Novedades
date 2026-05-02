@@ -1,8 +1,8 @@
-# Workspace — SCANIA Partes Técnicos
+# Workspace
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Spanish-language mobile app for Scania technicians/mechanics to submit overtime/service forms. Role-based access: technicians see own reports, supervisors see all.
+pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
 ## Stack
 
@@ -12,59 +12,37 @@ pnpm workspace monorepo using TypeScript. Spanish-language mobile app for Scania
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod, `drizzle-zod`
+- **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild
-- **Mobile**: Expo (React Native) with expo-router
-
-## Artifacts
-
-| Artifact | Path | Description |
-|---|---|---|
-| `api-server` | `/api` | Express REST API, port 8080 |
-| `mobile` | Expo dev domain | React Native / Expo app, port 18115 |
-| `mockup-sandbox` | `/__mockup` | Canvas component preview server |
+- **Build**: esbuild (CJS bundle)
+- **Authentication**: Clerk with branded in-app sign-in/sign-up screens
 
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
-- `pnpm --filter @workspace/mobile run dev` — run Expo app locally
 
-## Architecture
+## Artifacts
 
-### Auth
-- **Web/Clerk routes** (`/api/profile`, `/api/service-reports`): use Clerk JWT auth
-- **Mobile routes** (`/api/mobile/users`, `/api/mobile/reports`): auth via `displayName` validated against `allowed_users` table — no Clerk dependency on mobile
+- **Partes de Técnicos / SCANIA** (`artifacts/partes-tecnicos`) — React/Vite web app at `/` for technicians to submit overtime and service activity reports in Spanish. Includes mobile-friendly report form, automatic totals, technician-only history, supervisor dashboard, and review surface.
+- **API Server** (`artifacts/api-server`) — Express API mounted at `/api` with authenticated profile and report routes.
+- **Canvas** (`artifacts/mockup-sandbox`) — design/mockup sandbox.
 
-### DB Schema (`lib/db/src/schema/`)
-- `allowedUsers` — list of authorized names + supervisor flags
-- `userProfiles` — Clerk user profiles (web app users)
-- `serviceReports` — overtime/service report submissions
+## Data Model
 
-### Seeded Users (supervisors)
-- Daniel Castaneda, Tatiana Leal, Damian Ferrara (aka Marcos Damian Ferrara)
+- `user_profiles` stores authenticated user profiles by Clerk user ID, display name, email, and role (`technician` or `supervisor`).
+- `service_reports` stores technician reports with owner user fields, 50% and 100% overtime split by normal days and weekend/holiday categories, `+40km` variants, `solo +40km` hours, technical assistance guard, field activations, notes, review state, and timestamps.
 
-### Seeded Users (technicians)
-- Pedro Gonzalez, Jonatan Baez, Fernando Barrera, Javier Espinola,
-  Gustavo Mancuello Baez, Cristian Martinez, Gonzalo Perez, Guillermo Pipet,
-  Nahuel Ueki, Juan Duarte
+## API Surface
 
-### Mobile App Screens
-- `login.tsx` — name picker list, no password
-- `(tabs)/index.tsx` — "Nuevo Parte" form (all overtime/service fields)
-- `(tabs)/history.tsx` — report history list with summary stats
-- `(tabs)/profile.tsx` — current user info + logout
+- `GET /api/profile` — get or create the authenticated user profile.
+- `PATCH /api/profile` — update display name and role.
+- `GET /api/service-reports` — list reports visible to the authenticated user; technicians see only their own reports, supervisors see all.
+- `POST /api/service-reports` — create a report assigned to the authenticated user.
+- `PATCH /api/service-reports/{id}` — update review state and notes; supervisor role required.
+- `GET /api/service-reports/summary` — dashboard totals and review counts scoped to the authenticated user role.
 
-### Form Fields (Nuevo Parte)
-- Fecha (hoy / ayer / manual)
-- Turno: Mañana / Tarde/Cierre / Noche
-- Actividad (text)
-- Horas Extra 50%: Normal, Normal >40km, Fin semana/Feriado, Fin semana/Feriado >40km
-- Horas Extra 100%: same 4 variants
-- Solo >40km (toggle + hours)
-- Guardia asistencia técnica (stepper)
-- Activación en campo (stepper)
-- Adicional Guardia Semanal (toggle, max 4/month enforced server-side)
-- Notas (optional text)
+See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

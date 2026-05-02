@@ -5,10 +5,16 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ServiceReportsSummaryItemsItem } from "./serviceReportsSummaryItemsItem";
-import type { ServiceReportsSummaryPeriod } from "./serviceReportsSummaryPeriod";
 
 export interface ServiceReportsSummary {
-  items: ServiceReportsSummaryItemsItem[];
-  period?: ServiceReportsSummaryPeriod;
+  totalReports: number;
+  pendingReview: number;
+  reviewedReports: number;
+  total50Hours: number;
+  total100Hours: number;
+  totalKm40Items: number;
+  totalSoloKm40Hours: number;
+  totalGuardias: number;
+  totalActivaciones: number;
+  latestReportDate: string | null;
 }

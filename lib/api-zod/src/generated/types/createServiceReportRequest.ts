@@ -6,32 +6,35 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ServiceReport {
-  id: number;
-  ownerUserId: string;
-  ownerName: string;
-  ownerEmail: string;
+export interface CreateServiceReportRequest {
+  /** @minLength 1 */
   technicianName: string;
   workDate: Date;
-  shiftLabel: string;
+  shiftLabel?: string;
+  /** @minLength 1 */
   serviceActivity: string;
+  /** @minimum 0 */
   overtime50Normal: number;
+  /** @minimum 0 */
   overtime50NormalKm40: number;
+  /** @minimum 0 */
   overtime50WeekendHoliday: number;
+  /** @minimum 0 */
   overtime50WeekendHolidayKm40: number;
+  /** @minimum 0 */
   overtime100Normal: number;
+  /** @minimum 0 */
   overtime100NormalKm40: number;
+  /** @minimum 0 */
   overtime100WeekendHoliday: number;
+  /** @minimum 0 */
   overtime100WeekendHolidayKm40: number;
   soloKm40: boolean;
+  /** @minimum 0 */
   soloKm40Hours: number;
+  /** @minimum 0 */
   technicalAssistanceGuard: number;
+  /** @minimum 0 */
   fieldActivation: number;
-  total50Hours: number;
-  total100Hours: number;
-  totalKm40Items: number;
-  totalAdditionalItems: number;
-  reviewed: boolean;
-  notes: string;
-  createdAt: Date;
+  notes?: string;
 }

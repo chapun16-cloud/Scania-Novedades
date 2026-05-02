@@ -24,18 +24,19 @@ export const GetCurrentProfileResponse = zod.object({
   displayName: zod.string(),
   email: zod.string(),
   role: zod.enum(["technician", "supervisor"]),
-  defaultShift: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
+  defaultShift: zod.string().default("Tarde/Cierre"),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**
  * @summary Update current user profile
  */
+
 export const UpdateCurrentProfileBody = zod.object({
+  displayName: zod.string().min(1).optional(),
   role: zod.enum(["technician", "supervisor"]).optional(),
   defaultShift: zod.string().optional(),
-  password: zod.string().optional(),
 });
 
 export const UpdateCurrentProfileResponse = zod.object({
@@ -44,36 +45,23 @@ export const UpdateCurrentProfileResponse = zod.object({
   displayName: zod.string(),
   email: zod.string(),
   role: zod.enum(["technician", "supervisor"]),
-  defaultShift: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
+  defaultShift: zod.string().default("Tarde/Cierre"),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
-/**
- * @summary Setup user profile on first login
- */
-export const SetupProfileBody = zod.object({
-  firstName: zod.string(),
-  lastName: zod.string(),
-});
-
-/**
- * @summary List all users (supervisor only)
- */
 export const ListUsersResponseItem = zod.object({
   id: zod.number(),
   userId: zod.string(),
   displayName: zod.string(),
   email: zod.string(),
   role: zod.enum(["technician", "supervisor"]),
-  defaultShift: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
+  defaultShift: zod.string().default("Tarde/Cierre"),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
 /**
- * @summary List service reports
+ * @summary List service reports visible to the current user
  */
 export const ListServiceReportsResponseItem = zod.object({
   id: zod.number(),
@@ -96,113 +84,95 @@ export const ListServiceReportsResponseItem = zod.object({
   soloKm40Hours: zod.number(),
   technicalAssistanceGuard: zod.number(),
   fieldActivation: zod.number(),
-  guard: zod.boolean(),
-  notes: zod.string(),
-  reviewed: zod.boolean(),
+  guard: zod.boolean().default(false),
   total50Hours: zod.number(),
   total100Hours: zod.number(),
   totalKm40Items: zod.number(),
   totalAdditionalItems: zod.number(),
-  createdAt: zod.string(),
-  deletedAt: zod.string().nullish(),
-  deletedBy: zod.string().nullish(),
+  reviewed: zod.boolean(),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
 });
 export const ListServiceReportsResponse = zod.array(
   ListServiceReportsResponseItem,
 );
 
 /**
- * @summary Create a service report
+ * @summary Create a service report for the current user
  */
-export const createServiceReportBodyOvertime50NormalDefault = 0;
-export const createServiceReportBodyOvertime50NormalKm40Default = 0;
-export const createServiceReportBodyOvertime50WeekendHolidayDefault = 0;
-export const createServiceReportBodyOvertime50WeekendHolidayKm40Default = 0;
-export const createServiceReportBodyOvertime100NormalDefault = 0;
-export const createServiceReportBodyOvertime100NormalKm40Default = 0;
-export const createServiceReportBodyOvertime100WeekendHolidayDefault = 0;
-export const createServiceReportBodyOvertime100WeekendHolidayKm40Default = 0;
-export const createServiceReportBodySoloKm40Default = false;
-export const createServiceReportBodySoloKm40HoursDefault = 0;
-export const createServiceReportBodyTechnicalAssistanceGuardDefault = 0;
-export const createServiceReportBodyFieldActivationDefault = 0;
-export const createServiceReportBodyGuardDefault = false;
-export const createServiceReportBodyNotesDefault = ``;
+
+export const createServiceReportBodyOvertime50NormalMin = 0;
+
+export const createServiceReportBodyOvertime50NormalKm40Min = 0;
+
+export const createServiceReportBodyOvertime50WeekendHolidayMin = 0;
+
+export const createServiceReportBodyOvertime50WeekendHolidayKm40Min = 0;
+
+export const createServiceReportBodyOvertime100NormalMin = 0;
+
+export const createServiceReportBodyOvertime100NormalKm40Min = 0;
+
+export const createServiceReportBodyOvertime100WeekendHolidayMin = 0;
+
+export const createServiceReportBodyOvertime100WeekendHolidayKm40Min = 0;
+
+export const createServiceReportBodySoloKm40HoursMin = 0;
+
+export const createServiceReportBodyTechnicalAssistanceGuardMin = 0;
+
+export const createServiceReportBodyFieldActivationMin = 0;
 
 export const CreateServiceReportBody = zod.object({
-  workDate: zod.string(),
+  technicianName: zod.string().min(1),
+  workDate: zod.coerce.date(),
   shiftLabel: zod.string().optional(),
-  serviceActivity: zod.string(),
-  technicianName: zod.string().optional(),
+  serviceActivity: zod.string().min(1),
   overtime50Normal: zod
     .number()
-    .default(createServiceReportBodyOvertime50NormalDefault),
+    .min(createServiceReportBodyOvertime50NormalMin),
   overtime50NormalKm40: zod
     .number()
-    .default(createServiceReportBodyOvertime50NormalKm40Default),
+    .min(createServiceReportBodyOvertime50NormalKm40Min),
   overtime50WeekendHoliday: zod
     .number()
-    .default(createServiceReportBodyOvertime50WeekendHolidayDefault),
+    .min(createServiceReportBodyOvertime50WeekendHolidayMin),
   overtime50WeekendHolidayKm40: zod
     .number()
-    .default(createServiceReportBodyOvertime50WeekendHolidayKm40Default),
+    .min(createServiceReportBodyOvertime50WeekendHolidayKm40Min),
   overtime100Normal: zod
     .number()
-    .default(createServiceReportBodyOvertime100NormalDefault),
+    .min(createServiceReportBodyOvertime100NormalMin),
   overtime100NormalKm40: zod
     .number()
-    .default(createServiceReportBodyOvertime100NormalKm40Default),
+    .min(createServiceReportBodyOvertime100NormalKm40Min),
   overtime100WeekendHoliday: zod
     .number()
-    .default(createServiceReportBodyOvertime100WeekendHolidayDefault),
+    .min(createServiceReportBodyOvertime100WeekendHolidayMin),
   overtime100WeekendHolidayKm40: zod
     .number()
-    .default(createServiceReportBodyOvertime100WeekendHolidayKm40Default),
-  soloKm40: zod.boolean().default(createServiceReportBodySoloKm40Default),
-  soloKm40Hours: zod
-    .number()
-    .default(createServiceReportBodySoloKm40HoursDefault),
+    .min(createServiceReportBodyOvertime100WeekendHolidayKm40Min),
+  soloKm40: zod.boolean(),
+  soloKm40Hours: zod.number().min(createServiceReportBodySoloKm40HoursMin),
   technicalAssistanceGuard: zod
     .number()
-    .default(createServiceReportBodyTechnicalAssistanceGuardDefault),
-  fieldActivation: zod
-    .number()
-    .default(createServiceReportBodyFieldActivationDefault),
-  guard: zod.boolean().default(createServiceReportBodyGuardDefault),
-  notes: zod.string().default(createServiceReportBodyNotesDefault),
+    .min(createServiceReportBodyTechnicalAssistanceGuardMin),
+  fieldActivation: zod.number().min(createServiceReportBodyFieldActivationMin),
+  guard: zod.boolean().default(false),
+  notes: zod.string().optional(),
 });
 
 /**
- * @summary Get service reports summary
- */
-export const GetServiceReportsSummaryResponse = zod.object({
-  items: zod.array(
-    zod.object({
-      technicianName: zod.string(),
-      total50Hours: zod.number(),
-      total100Hours: zod.number(),
-      totalKm40Items: zod.number(),
-      totalAdditionalItems: zod.number(),
-      guardCount: zod.number(),
-      reportCount: zod.number(),
-    }),
-  ),
-  period: zod
-    .object({
-      start: zod.string().optional(),
-      end: zod.string().optional(),
-    })
-    .optional(),
-});
-
-/**
- * @summary Update a service report (supervisor only)
+ * @summary Update review status and notes, supervisor only
  */
 export const UpdateServiceReportParams = zod.object({
   id: zod.coerce.number(),
 });
 
 export const UpdateServiceReportBody = zod.object({
+  reviewed: zod.boolean().optional(),
+  notes: zod.string().optional(),
+  password: zod.string().optional(),
   workDate: zod.string().optional(),
   shiftLabel: zod.string().optional(),
   serviceActivity: zod.string().optional(),
@@ -219,9 +189,6 @@ export const UpdateServiceReportBody = zod.object({
   technicalAssistanceGuard: zod.number().optional(),
   fieldActivation: zod.number().optional(),
   guard: zod.boolean().optional(),
-  notes: zod.string().optional(),
-  reviewed: zod.boolean().optional(),
-  password: zod.string().optional(),
 });
 
 export const UpdateServiceReportResponse = zod.object({
@@ -230,7 +197,7 @@ export const UpdateServiceReportResponse = zod.object({
   ownerName: zod.string(),
   ownerEmail: zod.string(),
   technicianName: zod.string(),
-  workDate: zod.string(),
+  workDate: zod.coerce.date(),
   shiftLabel: zod.string(),
   serviceActivity: zod.string(),
   overtime50Normal: zod.number(),
@@ -246,57 +213,27 @@ export const UpdateServiceReportResponse = zod.object({
   technicalAssistanceGuard: zod.number(),
   fieldActivation: zod.number(),
   guard: zod.boolean(),
-  notes: zod.string(),
-  reviewed: zod.boolean(),
   total50Hours: zod.number(),
   total100Hours: zod.number(),
   totalKm40Items: zod.number(),
   totalAdditionalItems: zod.number(),
-  createdAt: zod.string(),
-  deletedAt: zod.string().nullish(),
-  deletedBy: zod.string().nullish(),
+  reviewed: zod.boolean(),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
 });
 
 /**
- * @summary Soft-delete a service report (supervisor only)
+ * @summary Dashboard totals for reports visible to the current user
  */
-export const DeleteServiceReportParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const DeleteServiceReportBody = zod.object({
-  password: zod.string(),
-});
-
-export const DeleteServiceReportResponse = zod.object({
-  id: zod.number(),
-  ownerUserId: zod.string(),
-  ownerName: zod.string(),
-  ownerEmail: zod.string(),
-  technicianName: zod.string(),
-  workDate: zod.string(),
-  shiftLabel: zod.string(),
-  serviceActivity: zod.string(),
-  overtime50Normal: zod.number(),
-  overtime50NormalKm40: zod.number(),
-  overtime50WeekendHoliday: zod.number(),
-  overtime50WeekendHolidayKm40: zod.number(),
-  overtime100Normal: zod.number(),
-  overtime100NormalKm40: zod.number(),
-  overtime100WeekendHoliday: zod.number(),
-  overtime100WeekendHolidayKm40: zod.number(),
-  soloKm40: zod.boolean(),
-  soloKm40Hours: zod.number(),
-  technicalAssistanceGuard: zod.number(),
-  fieldActivation: zod.number(),
-  guard: zod.boolean(),
-  notes: zod.string(),
-  reviewed: zod.boolean(),
+export const GetServiceReportsSummaryResponse = zod.object({
+  totalReports: zod.number(),
+  pendingReview: zod.number(),
+  reviewedReports: zod.number(),
   total50Hours: zod.number(),
   total100Hours: zod.number(),
   totalKm40Items: zod.number(),
-  totalAdditionalItems: zod.number(),
-  createdAt: zod.string(),
-  deletedAt: zod.string().nullish(),
-  deletedBy: zod.string().nullish(),
+  totalSoloKm40Hours: zod.number(),
+  totalGuardias: zod.number(),
+  totalActivaciones: zod.number(),
+  latestReportDate: zod.string().nullable(),
 });
