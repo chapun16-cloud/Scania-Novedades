@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: profile
+    description: User profile operations
+  - name: serviceReports
+    description: Service report operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,176 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /profile:
+    get:
+      operationId: getCurrentProfile
+      tags: [profile]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Profile not found
+    patch:
+      operationId: updateCurrentProfile
+      tags: [profile]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /profile/setup:
+    post:
+      operationId: setupProfile
+      tags: [profile]
+      summary: Setup user profile on first login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+              required: [firstName, lastName]
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [profile]
+      summary: List all users (supervisor only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+
+  /service-reports:
+    get:
+      operationId: listServiceReports
+      tags: [serviceReports]
+      summary: List service reports
+      responses:
+        "200":
+          description: List of service reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceReport"
+    post:
+      operationId: createServiceReport
+      tags: [serviceReports]
+      summary: Create a service report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceReportBody"
+      responses:
+        "201":
+          description: Created service report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReport"
+
+  /service-reports/summary:
+    get:
+      operationId: getServiceReportsSummary
+      tags: [serviceReports]
+      summary: Get service reports summary
+      responses:
+        "200":
+          description: Summary of service reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReportsSummary"
+
+  /service-reports/{id}:
+    patch:
+      operationId: updateServiceReport
+      tags: [serviceReports]
+      summary: Update a service report (supervisor only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceReportBody"
+      responses:
+        "200":
+          description: Updated service report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReport"
+    delete:
+      operationId: deleteServiceReport
+      tags: [serviceReports]
+      summary: Soft-delete a service report (supervisor only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+              required: [password]
+      responses:
+        "200":
+          description: Deleted report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReport"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +208,266 @@ components:
       required:
         - status
 
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [technician, supervisor]
+        defaultShift:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, userId, displayName, email, role, defaultShift, createdAt, updatedAt]
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [technician, supervisor]
+        defaultShift:
+          type: string
+        password:
+          type: string
+
+    ServiceReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerUserId:
+          type: string
+        ownerName:
+          type: string
+        ownerEmail:
+          type: string
+        technicianName:
+          type: string
+        workDate:
+          type: string
+        shiftLabel:
+          type: string
+        serviceActivity:
+          type: string
+        overtime50Normal:
+          type: integer
+        overtime50NormalKm40:
+          type: integer
+        overtime50WeekendHoliday:
+          type: integer
+        overtime50WeekendHolidayKm40:
+          type: integer
+        overtime100Normal:
+          type: integer
+        overtime100NormalKm40:
+          type: integer
+        overtime100WeekendHoliday:
+          type: integer
+        overtime100WeekendHolidayKm40:
+          type: integer
+        soloKm40:
+          type: boolean
+        soloKm40Hours:
+          type: integer
+        technicalAssistanceGuard:
+          type: integer
+        fieldActivation:
+          type: integer
+        guard:
+          type: boolean
+        notes:
+          type: string
+        reviewed:
+          type: boolean
+        total50Hours:
+          type: integer
+        total100Hours:
+          type: integer
+        totalKm40Items:
+          type: integer
+        totalAdditionalItems:
+          type: integer
+        createdAt:
+          type: string
+        deletedAt:
+          type: string
+          nullable: true
+        deletedBy:
+          type: string
+          nullable: true
+      required:
+        - id
+        - ownerUserId
+        - ownerName
+        - ownerEmail
+        - technicianName
+        - workDate
+        - shiftLabel
+        - serviceActivity
+        - overtime50Normal
+        - overtime50NormalKm40
+        - overtime50WeekendHoliday
+        - overtime50WeekendHolidayKm40
+        - overtime100Normal
+        - overtime100NormalKm40
+        - overtime100WeekendHoliday
+        - overtime100WeekendHolidayKm40
+        - soloKm40
+        - soloKm40Hours
+        - technicalAssistanceGuard
+        - fieldActivation
+        - guard
+        - notes
+        - reviewed
+        - total50Hours
+        - total100Hours
+        - totalKm40Items
+        - totalAdditionalItems
+        - createdAt
+
+    CreateServiceReportBody:
+      type: object
+      properties:
+        workDate:
+          type: string
+        shiftLabel:
+          type: string
+        serviceActivity:
+          type: string
+        technicianName:
+          type: string
+        overtime50Normal:
+          type: integer
+          default: 0
+        overtime50NormalKm40:
+          type: integer
+          default: 0
+        overtime50WeekendHoliday:
+          type: integer
+          default: 0
+        overtime50WeekendHolidayKm40:
+          type: integer
+          default: 0
+        overtime100Normal:
+          type: integer
+          default: 0
+        overtime100NormalKm40:
+          type: integer
+          default: 0
+        overtime100WeekendHoliday:
+          type: integer
+          default: 0
+        overtime100WeekendHolidayKm40:
+          type: integer
+          default: 0
+        soloKm40:
+          type: boolean
+          default: false
+        soloKm40Hours:
+          type: integer
+          default: 0
+        technicalAssistanceGuard:
+          type: integer
+          default: 0
+        fieldActivation:
+          type: integer
+          default: 0
+        guard:
+          type: boolean
+          default: false
+        notes:
+          type: string
+          default: ""
+      required: [workDate, serviceActivity]
+
+    UpdateServiceReportBody:
+      type: object
+      properties:
+        workDate:
+          type: string
+        shiftLabel:
+          type: string
+        serviceActivity:
+          type: string
+        overtime50Normal:
+          type: integer
+        overtime50NormalKm40:
+          type: integer
+        overtime50WeekendHoliday:
+          type: integer
+        overtime50WeekendHolidayKm40:
+          type: integer
+        overtime100Normal:
+          type: integer
+        overtime100NormalKm40:
+          type: integer
+        overtime100WeekendHoliday:
+          type: integer
+        overtime100WeekendHolidayKm40:
+          type: integer
+        soloKm40:
+          type: boolean
+        soloKm40Hours:
+          type: integer
+        technicalAssistanceGuard:
+          type: integer
+        fieldActivation:
+          type: integer
+        guard:
+          type: boolean
+        notes:
+          type: string
+        reviewed:
+          type: boolean
+        password:
+          type: string
+
+    ServiceReportsSummary:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              technicianName:
+                type: string
+              total50Hours:
+                type: integer
+              total100Hours:
+                type: integer
+              totalKm40Items:
+                type: integer
+              totalAdditionalItems:
+                type: integer
+              guardCount:
+                type: integer
+              reportCount:
+                type: integer
+            required:
+              - technicianName
+              - total50Hours
+              - total100Hours
+              - totalKm40Items
+              - totalAdditionalItems
+              - guardCount
+              - reportCount
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+            end:
+              type: string
+      required: [items]

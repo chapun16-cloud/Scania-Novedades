@@ -8,3 +8,141 @@
 export interface HealthStatus {
   status: string;
 }
+
+export type UserProfileRole =
+  (typeof UserProfileRole)[keyof typeof UserProfileRole];
+
+export const UserProfileRole = {
+  technician: "technician",
+  supervisor: "supervisor",
+} as const;
+
+export interface UserProfile {
+  id: number;
+  userId: string;
+  displayName: string;
+  email: string;
+  role: UserProfileRole;
+  defaultShift: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UpdateProfileBodyRole =
+  (typeof UpdateProfileBodyRole)[keyof typeof UpdateProfileBodyRole];
+
+export const UpdateProfileBodyRole = {
+  technician: "technician",
+  supervisor: "supervisor",
+} as const;
+
+export interface UpdateProfileBody {
+  role?: UpdateProfileBodyRole;
+  defaultShift?: string;
+  password?: string;
+}
+
+export interface ServiceReport {
+  id: number;
+  ownerUserId: string;
+  ownerName: string;
+  ownerEmail: string;
+  technicianName: string;
+  workDate: string;
+  shiftLabel: string;
+  serviceActivity: string;
+  overtime50Normal: number;
+  overtime50NormalKm40: number;
+  overtime50WeekendHoliday: number;
+  overtime50WeekendHolidayKm40: number;
+  overtime100Normal: number;
+  overtime100NormalKm40: number;
+  overtime100WeekendHoliday: number;
+  overtime100WeekendHolidayKm40: number;
+  soloKm40: boolean;
+  soloKm40Hours: number;
+  technicalAssistanceGuard: number;
+  fieldActivation: number;
+  guard: boolean;
+  notes: string;
+  reviewed: boolean;
+  total50Hours: number;
+  total100Hours: number;
+  totalKm40Items: number;
+  totalAdditionalItems: number;
+  createdAt: string;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+}
+
+export interface CreateServiceReportBody {
+  workDate: string;
+  shiftLabel?: string;
+  serviceActivity: string;
+  technicianName?: string;
+  overtime50Normal?: number;
+  overtime50NormalKm40?: number;
+  overtime50WeekendHoliday?: number;
+  overtime50WeekendHolidayKm40?: number;
+  overtime100Normal?: number;
+  overtime100NormalKm40?: number;
+  overtime100WeekendHoliday?: number;
+  overtime100WeekendHolidayKm40?: number;
+  soloKm40?: boolean;
+  soloKm40Hours?: number;
+  technicalAssistanceGuard?: number;
+  fieldActivation?: number;
+  guard?: boolean;
+  notes?: string;
+}
+
+export interface UpdateServiceReportBody {
+  workDate?: string;
+  shiftLabel?: string;
+  serviceActivity?: string;
+  overtime50Normal?: number;
+  overtime50NormalKm40?: number;
+  overtime50WeekendHoliday?: number;
+  overtime50WeekendHolidayKm40?: number;
+  overtime100Normal?: number;
+  overtime100NormalKm40?: number;
+  overtime100WeekendHoliday?: number;
+  overtime100WeekendHolidayKm40?: number;
+  soloKm40?: boolean;
+  soloKm40Hours?: number;
+  technicalAssistanceGuard?: number;
+  fieldActivation?: number;
+  guard?: boolean;
+  notes?: string;
+  reviewed?: boolean;
+  password?: string;
+}
+
+export type ServiceReportsSummaryItemsItem = {
+  technicianName: string;
+  total50Hours: number;
+  total100Hours: number;
+  totalKm40Items: number;
+  totalAdditionalItems: number;
+  guardCount: number;
+  reportCount: number;
+};
+
+export type ServiceReportsSummaryPeriod = {
+  start?: string;
+  end?: string;
+};
+
+export interface ServiceReportsSummary {
+  items: ServiceReportsSummaryItemsItem[];
+  period?: ServiceReportsSummaryPeriod;
+}
+
+export type SetupProfileBody = {
+  firstName: string;
+  lastName: string;
+};
+
+export type DeleteServiceReportBody = {
+  password: string;
+};

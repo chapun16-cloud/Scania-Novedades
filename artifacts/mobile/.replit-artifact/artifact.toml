@@ -1,5 +1,5 @@
 kind = "mobile"
-previewPath = "/"
+previewPath = "/mobile/"
 title = "SCANIA Partes Técnicos"
 version = "1.0.0"
 id = "artifacts/mobile"
@@ -12,7 +12,7 @@ version = "1.0.0"
 [[services]]
 ensurePreviewReachable = "/status"
 name = "expo"
-paths = [ "/" ]
+paths = [ "/mobile/" ]
 localPort = 18115
 
 [services.development]

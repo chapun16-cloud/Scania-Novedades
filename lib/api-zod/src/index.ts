@@ -1,3 +1,11 @@
 export * from "./generated/api";
-export * from "./generated/types";
-export * from "./manual";
+export type {
+  HealthStatus,
+  ServiceReport,
+  ServiceReportsSummary,
+  ServiceReportsSummaryItemsItem,
+  ServiceReportsSummaryPeriod,
+  UserProfile,
+  UserProfileRole,
+  UpdateProfileBodyRole,
+} from "./generated/types";
