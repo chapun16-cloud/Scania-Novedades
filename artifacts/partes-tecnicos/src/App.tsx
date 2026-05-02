@@ -99,8 +99,8 @@ function LandingPage() {
               <img src={scaniaLionWatermark} alt="SCANIA" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">SCANIA</h1>
-              <p className="text-xs text-secondary-foreground/70 font-mono">PARTES TÉCNICOS Y SUPERVISIÓN</p>
+              <h1 className="text-xl font-bold tracking-tight">SCANIA NOVEDADES</h1>
+              <p className="text-xs text-secondary-foreground/70 font-mono">PARTES HORAS EXTRAS DE TÉCNICOS Y SUPERVISIÓN</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -266,7 +266,7 @@ function ClerkProviderWithRoutes() {
       localization={{
         signIn: {
           start: {
-            title: "Ingresar a SCANIA",
+            title: "Ingresar a SCANIA NOVEDADES",
             subtitle: "Accedé a tus partes técnicos",
           },
         },
