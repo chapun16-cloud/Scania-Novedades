@@ -6,11 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from "./createServiceReportRequest";
 export * from "./healthStatus";
-export * from "./serviceReport";
-export * from "./serviceReportsSummary";
-export * from "./updateServiceReportRequest";
-export * from "./updateUserProfileRequest";
-export * from "./userProfile";
-export * from "./userRole";

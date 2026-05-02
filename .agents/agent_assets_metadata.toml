@@ -1,8 +1,8 @@
 uploads = []
-generated = []
+outputs = []
 
-[[outputs]]
-id = "lEkvEnSf-GsTHI_kTdOqK"
-uri = "file://scania_qr.png"
+[[generated]]
+id = "AgPs5N9Umm19Nv-fEZSmA"
+uri = "file://artifacts/mobile/assets/images/icon.png"
 type = "image"
-title = "QR Code — SCANIA App"
+title = "scania-mobile-icon"
