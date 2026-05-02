@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+.scania-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.scania-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scania-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.scania-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.scania-input {
+  transition: all 0.2s;
+}
+.scania-input:focus {
+  border-color: #ffb800;
+  box-shadow: 0 0 0 1px #ffb800;
+}
