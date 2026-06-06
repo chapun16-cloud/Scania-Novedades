@@ -115,7 +115,7 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
           </div>
 
           {/* Edit + Delete buttons — supervisor only */}
-          {canReview && (
+          {canReview && !report.reviewed && (
             <Button
               variant="ghost"
               size="icon"

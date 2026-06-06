@@ -228,6 +228,20 @@ router.patch("/service-reports/:id", requireAuth, async (req: AppRequest, res): 
   // Full-edit fields require password verification
   const fullEditFields = ["workDate","shiftLabel","serviceActivity","overtime50Normal","overtime50NormalKm40","overtime50WeekendHoliday","overtime50WeekendHolidayKm40","overtime100Normal","overtime100NormalKm40","overtime100WeekendHoliday","overtime100WeekendHolidayKm40","soloKm40","soloKm40Hours","technicalAssistanceGuard","fieldActivation","guard"] as const;
   const isFullEdit = fullEditFields.some((f) => f in req.body);
+
+  // Block edits on approved reports
+  if (isFullEdit) {
+    const [existing] = await db
+      .select({ reviewed: serviceReportsTable.reviewed })
+      .from(serviceReportsTable)
+      .where(eq(serviceReportsTable.id, params.data.id))
+      .limit(1);
+    if (existing?.reviewed) {
+      res.status(409).json({ error: "Este parte ya fue aprobado y no puede modificarse." });
+      return;
+    }
+  }
+
   if (isFullEdit) {
     const password = parsed.data.password;
     if (!password) {
