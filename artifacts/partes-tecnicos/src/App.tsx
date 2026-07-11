@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import scaniaLionWatermark from "@/assets/scania-lion-watermark.png";
+import scaniaLogo from "@/assets/logo-scania.jpg";
 import {
   ClerkProvider,
   SignIn,
@@ -96,7 +97,7 @@ function LandingPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-              <img src={scaniaLionWatermark} alt="SCANIA" className="w-full h-full object-cover" />
+              <img src={scaniaLogo} alt="SCANIA" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">SCANIA</h1>
