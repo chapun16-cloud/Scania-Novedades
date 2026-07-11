@@ -38,9 +38,7 @@ export function Scene2() {
           transition={{ duration: 0.8 }}
           className="text-[#F5A623] text-[2vw] font-bold tracking-widest mb-4"
           style={{ fontFamily: 'var(--font-display)' }}
-        >
-          PRECAISIÓN TOTAL
-        </motion.h2>
+        >PRECISIÓN TOTAL</motion.h2>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={phase >= 1 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -51,7 +49,6 @@ export function Scene2() {
           CARGA DE <br/>PARTES
         </motion.h1>
       </div>
-
       <div className="w-1/2 grid grid-cols-2 gap-6">
         {items.map((item, idx) => (
           <motion.div
