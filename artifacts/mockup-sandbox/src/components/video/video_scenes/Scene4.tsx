@@ -32,7 +32,7 @@ export function Scene4() {
           <ShieldAlert className="w-20 h-20 text-[#F5A623] shrink-0" />
           <div>
             <h2 className="text-white text-[2.5vw] font-bold mb-2" style={{ fontFamily: 'var(--font-display)' }}>Guardia Semanal</h2>
-            <p className="text-gray-300 text-[1.5vw]">Control estricto de límite: 1 guardia por semana por técnico.</p>
+            <p className="text-gray-300 text-[1.5vw]">Cobertura de SCANIA ASSISTANCE </p>
           </div>
         </motion.div>
 
