@@ -28,6 +28,7 @@ const hourFields = [
   "soloKm40Hours",
   "technicalAssistanceGuard",
   "fieldActivation",
+  "embarqueHours",
 ] as const;
 
 function toNumber(value: number | null | undefined): number {
@@ -86,6 +87,7 @@ function serializeReport(report: ServiceReport) {
     soloKm40Hours: toNumber(report.soloKm40Hours),
     technicalAssistanceGuard: toNumber(report.technicalAssistanceGuard),
     fieldActivation: toNumber(report.fieldActivation),
+    embarqueHours: toNumber(report.embarqueHours),
     guard: report.guard ?? false,
     reviewed: report.reviewed ?? false,
     ...calculateTotals(report),
@@ -146,11 +148,17 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
 
   const technicianName = parsed.data.technicianName || profile.displayName;
 
-  // Guard limit: max 4 per technician per calendar month of workDate
+  // Guard limit: max 1 per technician per calendar week (Mon–Sun)
   if (parsed.data.guard) {
     const workDate = new Date(parsed.data.workDate);
-    const monthStart = new Date(workDate.getFullYear(), workDate.getMonth(), 1).toISOString().split("T")[0];
-    const monthEnd = new Date(workDate.getFullYear(), workDate.getMonth() + 1, 1).toISOString().split("T")[0];
+    const day = workDate.getDay(); // 0=Sun, 1=Mon … 6=Sat
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const weekStart = new Date(workDate);
+    weekStart.setDate(workDate.getDate() + diffToMonday);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    const weekStartStr = weekStart.toISOString().split("T")[0];
+    const weekEndStr = weekEnd.toISOString().split("T")[0];
     const [countResult] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(serviceReportsTable)
@@ -159,12 +167,12 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
           eq(serviceReportsTable.ownerUserId, profile.userId),
           eq(serviceReportsTable.guard, true),
           isNull(serviceReportsTable.deletedAt),
-          gte(serviceReportsTable.workDate, monthStart),
-          lt(serviceReportsTable.workDate, monthEnd),
+          gte(serviceReportsTable.workDate, weekStartStr),
+          lt(serviceReportsTable.workDate, weekEndStr),
         )
       );
-    if ((countResult?.count ?? 0) >= 4) {
-      res.status(409).json({ error: "Ya registraste 4 guardias este mes. El adicional Guardia es semanal (máximo 4 por mes)." });
+    if ((countResult?.count ?? 0) >= 1) {
+      res.status(409).json({ error: "Ya registraste una guardia esta semana. El adicional Guardia es máximo 1 por semana." });
       return;
     }
   }
@@ -191,6 +199,7 @@ router.post("/service-reports", requireAuth, async (req: AppRequest, res): Promi
       soloKm40Hours: parsed.data.soloKm40Hours,
       technicalAssistanceGuard: parsed.data.technicalAssistanceGuard,
       fieldActivation: parsed.data.fieldActivation,
+      embarqueHours: parsed.data.embarqueHours,
       guard: parsed.data.guard ?? false,
       notes: parsed.data.notes ?? "",
     })

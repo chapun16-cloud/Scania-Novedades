@@ -51,6 +51,7 @@ export const serviceReportsTable = pgTable("service_reports", {
     .notNull()
     .default(0),
   fieldActivation: doublePrecision("field_activation").notNull().default(0),
+  embarqueHours: doublePrecision("embarque_hours").notNull().default(0),
   guard: boolean("guard").notNull().default(false),
   reviewed: boolean("reviewed").notNull().default(false),
   notes: text("notes").notNull().default(""),

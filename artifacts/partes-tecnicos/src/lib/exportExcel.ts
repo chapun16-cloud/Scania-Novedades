@@ -10,7 +10,7 @@ interface TechnicianTotals {
   sucursal: string;
   weeklyGuardCount: number;
   technicalAssistanceGuard: number;
-  fieldActivation: number;
+  embarqueHours: number;
   overtime50WeekendHoliday: number;
   overtime50Normal: number;
   overtime100WeekendHoliday: number;
@@ -45,7 +45,7 @@ function groupByTechnician(reports: ServiceReport[]): TechnicianTotals[] {
         sucursal: "NORTE",
         weeklyGuardCount: 0,
         technicalAssistanceGuard: 0,
-        fieldActivation: 0,
+        embarqueHours: 0,
         overtime50WeekendHoliday: 0,
         overtime50Normal: 0,
         overtime100WeekendHoliday: 0,
@@ -61,7 +61,7 @@ function groupByTechnician(reports: ServiceReport[]): TechnicianTotals[] {
     const t = map.get(key)!;
     if (r.guard) t.weeklyGuardCount += 1;
     t.technicalAssistanceGuard += Number(r.technicalAssistanceGuard ?? 0);
-    t.fieldActivation += Number(r.fieldActivation ?? 0);
+    t.embarqueHours += Number(r.embarqueHours ?? 0);
     t.overtime50WeekendHoliday += Number(r.overtime50WeekendHoliday ?? 0);
     t.overtime50Normal += Number(r.overtime50Normal ?? 0);
     t.overtime100WeekendHoliday += Number(r.overtime100WeekendHoliday ?? 0);
@@ -154,7 +154,7 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
       t.apellido,
       t.nombre,
       (t.weeklyGuardCount + t.technicalAssistanceGuard) || "",
-      t.fieldActivation || "",
+      t.embarqueHours || "",
       t.overtime50WeekendHoliday || "",
       t.overtime50Normal || "",
       t.overtime100WeekendHoliday || "",

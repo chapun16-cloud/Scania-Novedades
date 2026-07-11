@@ -55,6 +55,7 @@ export interface ServiceReport {
   soloKm40Hours: number;
   technicalAssistanceGuard: number;
   fieldActivation: number;
+  embarqueHours: number;
   guard: boolean;
   total50Hours: number;
   total100Hours: number;
@@ -95,6 +96,8 @@ export interface CreateServiceReportRequest {
   technicalAssistanceGuard: number;
   /** @minimum 0 */
   fieldActivation: number;
+  /** @minimum 0 */
+  embarqueHours: number;
   guard?: boolean;
   notes?: string;
 }

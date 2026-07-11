@@ -29,7 +29,7 @@ const formSchema = z.object({
   soloKm40: z.boolean().default(false),
   soloKm40Hours: z.coerce.number().min(0).default(0),
   technicalAssistanceGuard: z.coerce.number().min(0).default(0),
-  fieldActivation: z.coerce.number().min(0).default(0),
+  embarqueHours: z.coerce.number().min(0).default(0),
   guard: z.boolean().default(false),
   notes: z.string().optional(),
 });
@@ -42,16 +42,23 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
   const createReport = useCreateServiceReport();
   const { data: allReports } = useListServiceReports();
 
-  const guardUsedThisMonth = useMemo(() => {
+  const guardUsedThisWeek = useMemo(() => {
     if (!allReports) return 0;
-    const now = new Date();
+    const today = new Date();
+    const day = today.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() + diffToMonday);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
     return allReports.filter(r => {
       const d = new Date(r.workDate);
-      return r.guard && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      return r.guard && d >= weekStart && d < weekEnd;
     }).length;
   }, [allReports]);
 
-  const guardLimitReached = guardUsedThisMonth >= 4;
+  const guardLimitReached = guardUsedThisWeek >= 1;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,7 +78,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
       soloKm40: false,
       soloKm40Hours: 0,
       technicalAssistanceGuard: 0,
-      fieldActivation: 0,
+      embarqueHours: 0,
       guard: false,
       notes: "",
     }
@@ -84,7 +91,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
   }, [defaultTechnicianName, form]);
 
   function onSubmit(data: FormValues) {
-    createReport.mutate({ data: { ...data, soloKm40: data.soloKm40Hours > 0 } }, {
+    createReport.mutate({ data: { ...data, fieldActivation: 0, soloKm40: data.soloKm40Hours > 0 } }, {
       onSuccess: () => {
         toast({
           title: "Parte registrado",
@@ -108,7 +115,7 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
           soloKm40: false,
           soloKm40Hours: 0,
           technicalAssistanceGuard: 0,
-          fieldActivation: 0,
+          embarqueHours: 0,
           guard: false,
           notes: "",
         });
@@ -282,8 +289,8 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
                       <FormLabel className="text-base font-semibold cursor-pointer">Guardia semanal</FormLabel>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {guardLimitReached
-                          ? "Límite mensual alcanzado (4/4)"
-                          : `${guardUsedThisMonth} de 4 usadas este mes`}
+                          ? "Ya registraste guardia esta semana"
+                          : guardUsedThisWeek === 0 ? "Sin guardia esta semana" : "Guardia ya registrada esta semana"}
                       </p>
                     </div>
                   </div>
@@ -309,10 +316,11 @@ export function ReportForm({ defaultTechnicianName = "", defaultShift = "Tarde/C
                 <FormControl><Input type="number" min="0" {...field} className="font-mono" /></FormControl>
               </FormItem>
             )} />
-            <FormField control={form.control} name="fieldActivation" render={({ field }) => (
+            <FormField control={form.control} name="embarqueHours" render={({ field }) => (
               <FormItem className="rounded-lg border p-4 shadow-sm bg-card">
-                <FormLabel className="text-base block mb-2">Activación Campo</FormLabel>
-                <FormControl><Input type="number" min="0" {...field} className="font-mono" /></FormControl>
+                <FormLabel className="text-base block mb-2">Horas de Embarque</FormLabel>
+                <FormControl><Input type="number" min="0" step="0.5" {...field} className="font-mono" /></FormControl>
+                <p className="text-xs text-muted-foreground mt-2">Cantidad de horas de embarque.</p>
               </FormItem>
             )} />
           </div>

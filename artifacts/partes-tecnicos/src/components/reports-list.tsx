@@ -179,7 +179,7 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
               </div>
 
               {/* Adicionales */}
-              {(report.soloKm40Hours > 0 || report.soloKm40 || report.technicalAssistanceGuard > 0 || report.fieldActivation > 0 || report.guard) && (
+              {(report.soloKm40Hours > 0 || report.soloKm40 || report.technicalAssistanceGuard > 0 || report.embarqueHours > 0 || report.fieldActivation > 0 || report.guard) && (
                 <div>
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 mt-2">Adicionales</h4>
                   <div className="flex flex-wrap gap-2">
@@ -191,6 +191,9 @@ function ReportRow({ report, canReview, isExpanded, onToggle }: { report: Servic
                     )}
                     {report.technicalAssistanceGuard > 0 && (
                       <Badge variant="outline" className="bg-card">Guardia Asistencia: {report.technicalAssistanceGuard}</Badge>
+                    )}
+                    {report.embarqueHours > 0 && (
+                      <Badge variant="outline" className="bg-card">Embarque: {report.embarqueHours}h</Badge>
                     )}
                     {report.fieldActivation > 0 && (
                       <Badge variant="outline" className="bg-card">Activación: {report.fieldActivation}</Badge>

@@ -35,7 +35,7 @@ const editSchema = z.object({
   overtime100WeekendHolidayKm40: z.coerce.number().min(0).default(0),
   soloKm40Hours: z.coerce.number().min(0).default(0),
   technicalAssistanceGuard: z.coerce.number().min(0).default(0),
-  fieldActivation: z.coerce.number().min(0).default(0),
+  embarqueHours: z.coerce.number().min(0).default(0),
   guard: z.boolean().default(false),
   notes: z.string().optional(),
 });
@@ -75,7 +75,7 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
       overtime100WeekendHolidayKm40: report.overtime100WeekendHolidayKm40 ?? 0,
       soloKm40Hours: report.soloKm40Hours ?? 0,
       technicalAssistanceGuard: report.technicalAssistanceGuard ?? 0,
-      fieldActivation: report.fieldActivation ?? 0,
+      embarqueHours: report.embarqueHours ?? 0,
       guard: report.guard ?? false,
       notes: report.notes || "",
     },
@@ -110,6 +110,7 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
         body: JSON.stringify({
           ...pendingData,
           soloKm40: (pendingData.soloKm40Hours ?? 0) > 0,
+          fieldActivation: 0,
           password,
         }),
       });
@@ -241,10 +242,10 @@ export function EditReportDialog({ report, open, onClose, onSaved }: Props) {
                     </FormItem>
                   )} />
                   <div className="grid grid-cols-3 gap-4">
-                    {(["soloKm40Hours","technicalAssistanceGuard","fieldActivation"] as const).map((name, i) => (
+                    {(["soloKm40Hours","technicalAssistanceGuard","embarqueHours"] as const).map((name, i) => (
                       <FormField key={name} control={form.control} name={name} render={({ field }) => (
                         <FormItem className="border rounded-lg p-3 bg-card shadow-sm">
-                          <FormLabel className="text-xs font-semibold">{["Solo +40km","Guardia Asistencia","Activación"][i]}</FormLabel>
+                          <FormLabel className="text-xs font-semibold">{["Solo +40km","Guardia Asistencia","Horas Embarque"][i]}</FormLabel>
                           <FormControl><Input type="number" min="0" step="0.5" {...field} className="font-mono" /></FormControl>
                         </FormItem>
                       )} />
