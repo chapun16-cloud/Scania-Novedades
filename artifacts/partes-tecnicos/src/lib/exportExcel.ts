@@ -154,7 +154,7 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
       t.apellido,
       t.nombre,
       (t.weeklyGuardCount + t.technicalAssistanceGuard) || "",
-      t.embarqueHours || "",
+      "",
       t.overtime50WeekendHoliday || "",
       t.overtime50Normal || "",
       t.overtime100WeekendHoliday || "",
