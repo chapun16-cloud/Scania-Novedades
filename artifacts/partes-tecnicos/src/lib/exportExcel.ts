@@ -163,7 +163,7 @@ export function exportReportsToExcel(reports: ServiceReport[], filename?: string
       t.overtime50NormalKm40 || "",
       t.overtime100WeekendHolidayKm40 || "",
       t.overtime100NormalKm40 || "",
-      "",
+      t.embarqueHours || "",
       t.soloKm40Hours || "",
       "",
       "",
